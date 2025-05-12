@@ -1,0 +1,72 @@
+﻿@model ToDoApp.Models.ViewModels.LoginViewModel
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h2 class="h4 mb-0 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-sign-in-alt me-3"></i>Login to Your Account
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Login" method="post">
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
+                            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <p class="mb-0">
+                        Don't have an account?
+                        <a asp-action="Register" asp-controller="Account" class="text-primary">
+                            Register here
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            @* Optional: Forgot Password Link *@
+            <div class="text-center mt-3">
+                <a href="#" class="text-muted small">Forgot Password?</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Optional: Toggle password visibility
+            $('.toggle-password').on('click', function() {
+                const passwordInput = $(this).prev('input');
+                const type = passwordInput.attr('type') === 'password' ? 'text' : 'password';
+                passwordInput.attr('type', type);
+                $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+            });
+        });
+    </script>
+}
