@@ -1,0 +1,87 @@
+﻿@model IEnumerable<dynamic>
+
+<h2 class="text-center">All Users</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr class="table-primary">
+            <th>Username</th>
+            <th>Email</th>
+            <th>Total Tasks</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var userTask in Model)
+        {
+            <tr>
+                <td>@userTask.User.UserName</td>
+                <td>@userTask.User.Email</td>
+                <td>@userTask.TaskCount</td>
+                <td>
+                    @if (!userTask.Roles.Contains("Admin"))
+                    {
+                        <a asp-action="DeleteUser" asp-route-id="@userTask.User.Id" class="btn btn-danger btn-sm">
+                            Delete
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #007bff;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    tr:hover {
+        background-color: #ddd;
+    }
+
+    .btn-danger {
+        color: white;
+        background-color: #dc3545;
+        border: none;
+        padding: 5px 10px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .table {
+        width: 100%;
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .table-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+</style>

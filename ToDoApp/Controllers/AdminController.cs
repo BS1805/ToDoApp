@@ -23,31 +23,57 @@ public class AdminController : Controller
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> DeleteUser(string id)
     {
         try
         {
-            var users = _userManager.Users;
-            return View(users);
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View("Error");
+            }
+
+            _logger.LogInformation($"User with ID {id} was deleted.");
+            return RedirectToAction("ViewAllUsers");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while loading the Admin Index page.");
+            _logger.LogError(ex, $"An error occurred while deleting the user with ID {id}.");
             return View("Error");
         }
     }
 
-    public async Task<IActionResult> ViewUserToDos(string userId)
+    public async Task<IActionResult> ViewAllUsers()
     {
-        try
+        var users = _userManager.Users.ToList();
+
+        var userList = new List<dynamic>();
+        foreach (var user in users)
         {
-            var toDoItems = await _toDoService.GetAllToDoItems();
-            return View(toDoItems);
+            var roles = await _userManager.GetRolesAsync(user);
+            var taskCount = _toDoService.GetAllToDoItems().Result.Count(item => item.UserId == user.Id);
+
+            userList.Add(new
+            {
+                User = user,
+                Roles = roles,
+                TaskCount = taskCount
+            });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while retrieving ToDo items for user {userId}.");
-            return View("Error");
-        }
+
+        return View(userList);
     }
+
+
+
 }

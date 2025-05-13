@@ -36,11 +36,11 @@ public class AccountController : Controller
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    
+                    // Assign the "User" role to the newly created user
                     await _userManager.AddToRoleAsync(user, "User");
 
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
+                    // Redirect admin to the "View All Users" page
+                    return RedirectToAction("ViewAllUsers", "Admin");
                 }
                 foreach (var error in result.Errors)
                 {
@@ -69,7 +69,11 @@ public class AccountController : Controller
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    
+                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    if (await _userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        return RedirectToAction("ViewAllUsers", "Admin");
+                    }
                     return RedirectToAction("Index", "User");
                 }
                 else
@@ -85,6 +89,8 @@ public class AccountController : Controller
         }
         return View(model);
     }
+
+    
 
     public async Task<IActionResult> Logout()
     {
