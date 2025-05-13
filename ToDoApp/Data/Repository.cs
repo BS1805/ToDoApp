@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using ToDoApp.Models;
 
 namespace ToDoApp.Data;
 
@@ -12,87 +14,56 @@ public class Repository<T> : IRepository<T> where T : class
     public Repository(ApplicationDbContext context)
     {
         _context = context;
-        _dbSet = context.Set<T>();
+        _dbSet = _context.Set<T>();
     }
 
     public async Task<IEnumerable<T>> GetAllAsync()
     {
-        try
-        {
-            return await _dbSet.ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            
-            throw new Exception("An error occurred while retrieving all entities.", ex);
-        }
+        return await _dbSet.ToListAsync();
     }
 
     public async Task<T> GetByIdAsync(int id)
     {
-        try
-        {
-            var entity = await _dbSet.FindAsync(id);
-            if (entity == null)
-            {
-                throw new KeyNotFoundException($"Entity with ID {id} was not found.");
-            }
-            return entity;
-        }
-        catch (Exception ex)
-        {
-            
-            throw new Exception($"An error occurred while retrieving the entity with ID {id}.", ex);
-        }
+        return await _dbSet.FindAsync(id);
     }
 
     public async Task AddAsync(T entity)
     {
-        try
-        {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-           
-            throw new Exception("An error occurred while adding the entity.", ex);
-        }
+        await _dbSet.AddAsync(entity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(T entity)
     {
-        try
-        {
-            _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            
-            throw new Exception("An error occurred while updating the entity.", ex);
-        }
+        _dbSet.Update(entity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        try
+        var entity = await _dbSet.FindAsync(id);
+        if (entity != null)
         {
-            var entity = await _dbSet.FindAsync(id);
-            if (entity != null)
-            {
-                _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
-            else
-            {
-                throw new KeyNotFoundException($"Entity with ID {id} was not found.");
-            }
-        }
-        catch (Exception ex)
-        {
-           
-            throw new Exception($"An error occurred while deleting the entity with ID {id}.", ex);
+            _dbSet.Remove(entity);
+            await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
+           Expression<Func<T, bool>> filter,
+           int pageIndex,
+           int pageSize)
+    {
+        var query = _dbSet.Where(filter);
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(e => EF.Property<object>(e, "Id"))
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
 }

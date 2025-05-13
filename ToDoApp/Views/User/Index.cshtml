@@ -1,4 +1,5 @@
-﻿@model IEnumerable<ToDoApp.Models.ViewModels.TaskViewModel>
+﻿@model ToDoApp.Models.ViewModels.PagedListViewModel<ToDoApp.Models.ViewModels.TaskViewModel>
+
 
 @{
     ViewData["Title"] = "Your To-Do List";
@@ -82,6 +83,43 @@
             color: #28a745;
         }
 
+    .pagination {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .pagination-item {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid #e5e5e5;
+        background-color: white;
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .pagination-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .pagination-item.active {
+            background-color: #ff9966;
+            color: white;
+            border-color: #ff9966;
+        }
+
+        .pagination-item.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
     /* Mobile responsive improvements */
     @@media (max-width: 767.98px) {
         .card-title
@@ -120,7 +158,7 @@
     </div>
 
     <div class="row">
-        @foreach (var item in Model)
+        @foreach (var item in Model.Items)
         {
             <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
                 <div class="task-card mx-auto">
@@ -168,4 +206,42 @@
             </div>
         }
     </div>
+
+   <div class="container">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <!-- Previous Button -->
+            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex - 1)" asp-route-pageSize="@Model.PageSize">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+
+            <!-- Page Numbers -->
+            @if (Model.TotalPages > 0)
+            {
+                int startPage = Math.Max(1, Model.PageIndex - 1);
+                int endPage = Math.Min(Model.TotalPages, Model.PageIndex + 1);
+
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">
+                            @i
+                        </a>
+                    </li>
+                }
+            }
+
+            <!-- Next Button -->
+            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex + 1)" asp-route-pageSize="@Model.PageSize">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+
 </div>
