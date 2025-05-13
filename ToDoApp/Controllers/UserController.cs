@@ -20,24 +20,20 @@ public class UserController : Controller
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int page = 1, int pageSize = 12)
     {
-
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var toDoItems = (await _toDoService.GetAllToDoItems())
-                .Where(item => item.UserId == userId)
-                .Select(item => new TaskViewModel
-                {
-                    Id = item.Id,
-                    Title = item.Title,
-                    Description = item.Description,
-                    IsCompleted = item.IsCompleted
-                })
-                .ToList();
+            var model = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
 
-            return View(toDoItems);
+            
+            if (page > model.TotalPages && model.TotalPages > 0)
+            {
+                return RedirectToAction(nameof(Index), new { page = model.TotalPages, pageSize });
+            }
+
+            return View(model);
         }
         catch (Exception ex)
         {
@@ -45,6 +41,10 @@ public class UserController : Controller
             return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
+
+
+
+
 
 
     public IActionResult Create()

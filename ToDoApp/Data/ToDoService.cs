@@ -1,4 +1,5 @@
 ﻿using ToDoApp.Models;
+using ToDoApp.Models.ViewModels;
 
 namespace ToDoApp.Data;
 public class ToDoService
@@ -19,6 +20,51 @@ public class ToDoService
         catch (Exception ex)
         {
             throw new Exception("An error occurred while retrieving ToDo items.", ex);
+        }
+    }
+
+    public async Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize)
+    {
+        try
+        {
+            
+            var (items, totalCount) = await _repository.GetPaginatedAsync(
+                item => item.UserId == userId,  
+                pageIndex,
+                pageSize
+            );
+           
+      
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+       
+            if (pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            else if (totalPages > 0 && pageIndex > totalPages)
+            {
+                pageIndex = totalPages;
+            }
+
+            return new PagedListViewModel<TaskViewModel>
+            {
+                Items = items.Select(item => new TaskViewModel
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    Description = item.Description,
+                    IsCompleted = item.IsCompleted
+                }).ToList(),
+                PageIndex = pageIndex,
+                TotalPages = totalPages,
+                TotalCount = totalCount,
+                PageSize = pageSize
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("An error occurred while retrieving paged ToDo items.", ex);
         }
     }
 
