@@ -22,11 +22,21 @@ public class UserController : Controller
 
     public async Task<IActionResult> Index()
     {
+
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var toDoItems = (await _toDoService.GetAllToDoItems())
-                .Where(item => item.UserId == userId);
+                .Where(item => item.UserId == userId)
+                .Select(item => new TaskViewModel
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    Description = item.Description,
+                    IsCompleted = item.IsCompleted
+                })
+                .ToList();
+
             return View(toDoItems);
         }
         catch (Exception ex)
@@ -35,6 +45,7 @@ public class UserController : Controller
             return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
+
 
     public IActionResult Create()
     {
