@@ -1,0 +1,14 @@
+﻿body {
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    background-color: #f8f9fa;
+}
+
+.footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #f1f1f1;
+    color: #333;
+}

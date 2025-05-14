@@ -1,0 +1,131 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using ToDoApp.Domain.Entities
+@inject UserManager<ApplicationUser> UserManager;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ToDoApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ToDoApp.styles.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://kit.fontawesome.com/29123f4ad7.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        .sticky {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 100;
+        }
+
+        body.sticky-nav {
+        padding-top: 56px;
+        }
+
+        /* Mobile responsive improvements */
+        @@media (max-width: 767.98px) {
+        .navbar-brand img {
+        height: 45px;
+        }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="~/Book"><img src="~/Images/todolist.png" height="65px" /></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">  Home  </a>
+                        </li>
+                        @if ((User.IsInRole("Admin")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register"> Add User </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="ViewAllUsers"> All Users </a>
+                            </li>
+                        }
+                        else if ((User.IsInRole("User")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index"> All Tasks </a>
+                            </li>
+                            
+                        }
+
+                    </ul>
+                </div>
+
+                @if (!User.Identity.IsAuthenticated)
+                 {
+                 <div class="d-flex">
+                 <a class="btn btn-outline-success me-2" asp-controller="Account" asp-action="Login">
+                 <i class="bi bi-box-arrow-in-right"></i> Login
+                 </a>
+                 </div>
+                 }
+                else
+                {
+                    <div class="d-flex">
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-success me-2" type="button" id="profile-btn" aria-expanded="false">
+                                @UserManager.GetUserName(User)
+                            </button>
+                        </div>
+
+                        <form asp-controller="Account" asp-action="Logout">
+                            <button class="btn btn-outline-danger">
+                                Log out
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - ToDoApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+
+        $(window).scroll(function() {
+        if ($(this).scrollTop() > 0) {
+        $('header').addClass('sticky');
+        $('body').addClass('sticky-nav');
+        } else {
+        $('header').removeClass('sticky');
+        $('body').removeClass('sticky-nav');
+        }
+        });
+    </script>
+
+</body>
+</html>

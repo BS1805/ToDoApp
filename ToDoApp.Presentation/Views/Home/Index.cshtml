@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-4 text-primary">Welcome to ToDoApp</h1>
+    <p class="lead text-secondary">Manage your tasks efficiently and stay organized.</p>
+</div>
+
+<div class="container mt-4">
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="alert alert-info">
+            <h3>Hello, @User.Identity.Name!</h3>
+            @if (User.IsInRole("Admin"))
+            {
+                <p>You are logged in as an <strong>Admin</strong>.</p>
+                <a asp-controller="Admin" asp-action="ViewAllUsers" class="btn btn-success btn-lg">Manage Users</a>
+            }
+            else
+            {
+                <p>You are logged in as a <strong>User</strong>.</p>
+                <a asp-controller="User" asp-action="Index" class="btn btn-primary btn-lg">View Your Tasks</a>
+            }
+        </div>
+    }
+    else
+    {
+    
+            <p>Welcome to ToDoApp! Please <a asp-controller="Account" asp-action="Login" class="text-decoration-none">log in to get started.</a></p>
+    
+    }
+</div>
+
+<style>
+    .display-4 {
+        font-weight: bold;
+        color: #1dd1a1;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .alert-info {
+        background-color: #e2f0fe;
+        color: #1dd1a1;
+    }
+
+
+    .btn {
+        margin-top: 10px;
+    }
+
+    .btn-lg {
+        padding: 15px 30px;
+        font-size: 18px;
+    }
+</style>
