@@ -5,7 +5,7 @@
 <table class="table table-bordered table-striped">
     <thead>
         <tr class="table-primary">
-            <th>Username</th>
+            
             <th>Email</th>
             <th>Total Tasks</th>
             <th>Actions</th>
@@ -15,7 +15,7 @@
         @foreach (var userTask in Model)
         {
             <tr>
-                <td>@userTask.User.UserName</td>
+              
                 <td>@userTask.User.Email</td>
                 <td>@userTask.TaskCount</td>
                 <td>

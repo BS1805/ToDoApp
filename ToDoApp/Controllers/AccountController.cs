@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using ToDoApp.Models;
 using ToDoApp.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ToDoApp.Controllers;
 
@@ -22,10 +23,12 @@ public class AccountController : Controller
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    [Authorize(Roles = "Admin")]
     public IActionResult Register() => View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (ModelState.IsValid)
