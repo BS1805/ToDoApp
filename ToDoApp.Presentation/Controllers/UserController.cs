@@ -2,24 +2,25 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ToDoApp.Application.Interfaces;
-using ToDoApp.Application.DTOs;
-using ToDoApp.Domain.Entities;
-using System.Diagnostics;
 using ToDoApp.Application.Services;
+using ToDoApp.Application.DTOs;
 using ToDoApp.Domain.Enums;
+using System.Diagnostics;
 
 namespace ToDoApp.Presentation.Controllers;
 
 [Authorize(Policy = "UserOnly")]
 public class UserController : Controller
 {
-    private readonly ToDoService _toDoService;
+    private readonly IToDoService _toDoService;
+    private readonly PermissionService _permissionService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(ToDoService toDoService, ILogger<UserController> logger)
+    public UserController(IToDoService toDoService, PermissionService permissionService, ILogger<UserController> logger)
     {
-        _toDoService = toDoService ?? throw new ArgumentNullException(nameof(toDoService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _toDoService = toDoService;
+        _permissionService = permissionService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index(int page = 1, int pageSize = 12)
@@ -28,15 +29,7 @@ public class UserController : Controller
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var model = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
-
-
-            if (page > model.TotalPages && model.TotalPages > 0)
-            {
-                return RedirectToAction(nameof(Index), new { page = model.TotalPages, pageSize });
-            }
-
             return View(model);
-
         }
         catch (Exception ex)
         {
@@ -45,55 +38,26 @@ public class UserController : Controller
         }
     }
 
-    private bool HasPermission(UserPermission requiredPermission)
-    {
-        var userPermissions = (UserPermission)Enum.Parse(typeof(UserPermission), User.FindFirstValue("Permissions") ?? "None");
-        return userPermissions.HasFlag(requiredPermission);
-    }
-
-
-
-
-
     public IActionResult Create()
     {
-        if (!HasPermission(UserPermission.Create))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Create))
             return Forbid();
-        }
 
-        try
-        {
-            return View(new TaskViewModel());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while loading the Create page.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        return View(new TaskViewModel());
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
     {
-        if (!HasPermission(UserPermission.Create))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Create))
             return Forbid();
-        }
 
         if (ModelState.IsValid)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var toDoItem = new ToDoItem
-                {
-                    Title = model.Title,
-                    Description = model.Description,
-                    IsCompleted = model.IsCompleted,
-                    UserId = userId
-                };
-                await _toDoService.AddToDoItem(toDoItem);
+                await _toDoService.CreateToDoItem(model, userId);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -105,33 +69,20 @@ public class UserController : Controller
         return View(model);
     }
 
-
     public async Task<IActionResult> Edit(int id)
     {
-        if (!HasPermission(UserPermission.Edit))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Edit))
             return Forbid();
-        }
 
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var item = await _toDoService.GetToDoItemById(id);
-
-            if (item == null || item.UserId != userId)
-            {
-                return NotFound();
-            }
-
-            var model = new TaskViewModel
-            {
-                Id = item.Id,
-                Title = item.Title,
-                Description = item.Description,
-                IsCompleted = item.IsCompleted
-            };
-
+            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
             return View(model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound();
         }
         catch (Exception ex)
         {
@@ -140,31 +91,19 @@ public class UserController : Controller
         }
     }
 
+
     [HttpPost]
     public async Task<IActionResult> Edit(TaskViewModel model)
     {
-        if (!HasPermission(UserPermission.Edit))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Edit))
             return Forbid();
-        }
 
         if (ModelState.IsValid)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                var item = await _toDoService.GetToDoItemById(model.Id.Value);
-                if (item == null || item.UserId != userId)
-                {
-                    return Unauthorized();
-                }
-
-                item.Title = model.Title;
-                item.Description = model.Description;
-                item.IsCompleted = model.IsCompleted;
-
-                await _toDoService.UpdateToDoItem(item);
+                await _toDoService.UpdateToDoItem(model, userId);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -176,33 +115,20 @@ public class UserController : Controller
         return View(model);
     }
 
-
     public async Task<IActionResult> Delete(int id)
     {
-        if (!HasPermission(UserPermission.Delete))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Delete))
             return Forbid();
-        }
 
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var item = await _toDoService.GetToDoItemById(id);
-
-            if (item == null || item.UserId != userId)
-            {
-                return NotFound();
-            }
-
-            var model = new TaskViewModel
-            {
-                Id = item.Id,
-                Title = item.Title,
-                Description = item.Description,
-                IsCompleted = item.IsCompleted
-            };
-
+            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
             return View(model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound();
         }
         catch (Exception ex)
         {
@@ -212,60 +138,38 @@ public class UserController : Controller
     }
 
     [HttpPost, ActionName("Delete")]
-    public async Task<IActionResult> DeleteConfirmed(TaskViewModel model)
+    public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        if (!HasPermission(UserPermission.Delete))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Delete))
             return Forbid();
-        }
 
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var item = await _toDoService.GetToDoItemById(model.Id.Value);
-
-            if (item == null || item.UserId != userId)
-            {
-                return Unauthorized();
-            }
-
-            await _toDoService.DeleteToDoItem(model.Id.Value);
+            await _toDoService.DeleteToDoItemForUser(id, userId);
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"An error occurred while deleting the ToDo item with ID {model.Id}.");
+            _logger.LogError(ex, $"An error occurred while deleting the ToDo item with ID {id}.");
             return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 
-
     public async Task<IActionResult> Details(int id)
     {
-        if (!HasPermission(UserPermission.Details))
-        {
+        if (!_permissionService.HasPermission(User, UserPermission.Details))
             return Forbid();
-        }
 
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var item = await _toDoService.GetToDoItemById(id);
-
-            if (item == null || item.UserId != userId)
-            {
-                return NotFound();
-            }
-
-            var model = new TaskViewModel
-            {
-                Id = item.Id,
-                Title = item.Title,
-                Description = item.Description,
-                IsCompleted = item.IsCompleted
-            };
-
+            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
             return View(model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound();
         }
         catch (Exception ex)
         {
@@ -273,6 +177,5 @@ public class UserController : Controller
             return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
-
 
 }
