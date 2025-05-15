@@ -24,8 +24,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Add these lines in the service registration section:
-builder.Services.AddScoped<ToDoService>();
+builder.Services.AddScoped<IToDoService, ToDoService>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUserAdminService, UserAdminService>();
+builder.Services.AddScoped<PermissionService>();
+
 
 // Add MVC services
 builder.Services.AddControllersWithViews();

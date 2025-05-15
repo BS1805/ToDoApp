@@ -5,10 +5,11 @@ namespace ToDoApp.Application.Interfaces;
 
 public interface IToDoService
 {
-    Task<IEnumerable<ToDoItem>> GetAllToDoItems();
+    Task<TaskViewModel> GetTaskViewModelForUser(int id, string userId);
+    Task<ToDoItem> CreateToDoItem(TaskViewModel model, string userId);
+    Task<ToDoItem> UpdateToDoItem(TaskViewModel model, string userId);
+    Task<ToDoItem> GetToDoItemForUser(int id, string userId);
+    Task DeleteToDoItemForUser(int id, string userId);
     Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize);
-    Task<ToDoItem> GetToDoItemById(int id);
-    Task AddToDoItem(ToDoItem item);
-    Task UpdateToDoItem(ToDoItem item);
-    Task DeleteToDoItem(int id);
+    Task<int> GetTaskCountForUserAsync(string userId);
 }

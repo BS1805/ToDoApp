@@ -1,11 +1,10 @@
-﻿using System.Security.Claims;
-using ToDoApp.Application.DTOs;
+﻿using ToDoApp.Application.DTOs;
 using ToDoApp.Application.Interfaces;
 using ToDoApp.Domain.Entities;
 
 namespace ToDoApp.Application.Services;
 
-public class ToDoService
+public class ToDoService : IToDoService
 {
     private readonly IRepository<ToDoItem> _repository;
 
@@ -13,109 +12,93 @@ public class ToDoService
     {
         _repository = repository;
     }
-
-    public async Task<IEnumerable<ToDoItem>> GetAllToDoItems()
+    public async Task<int> GetTaskCountForUserAsync(string userId)
     {
-        try
+        var allTasks = await _repository.GetAllAsync();
+        return allTasks.Count(task => task.UserId == userId);
+    }
+    public async Task<TaskViewModel> GetTaskViewModelForUser(int id, string userId)
+    {
+        var item = await _repository.GetByIdAsync(id);
+        if (item == null || item.UserId != userId)
+            throw new UnauthorizedAccessException();
+
+        return new TaskViewModel
         {
-            return await _repository.GetAllAsync();
-        }
-        catch (Exception ex)
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            IsCompleted = item.IsCompleted
+        };
+    }
+    public async Task<ToDoItem> CreateToDoItem(TaskViewModel model, string userId)
+    {
+        var toDoItem = new ToDoItem
         {
-            throw new Exception("An error occurred while retrieving ToDo items.", ex);
-        }
+            Title = model.Title,
+            Description = model.Description,
+            IsCompleted = model.IsCompleted,
+            UserId = userId
+        };
+        await _repository.AddAsync(toDoItem);
+        return toDoItem;
+    }
+
+    public async Task<ToDoItem> UpdateToDoItem(TaskViewModel model, string userId)
+    {
+        var item = await _repository.GetByIdAsync(model.Id.Value);
+        if (item == null || item.UserId != userId)
+            throw new UnauthorizedAccessException();
+
+        item.Title = model.Title;
+        item.Description = model.Description;
+        item.IsCompleted = model.IsCompleted;
+
+        await _repository.UpdateAsync(item);
+        return item;
+    }
+
+    public async Task<ToDoItem> GetToDoItemForUser(int id, string userId)
+    {
+        var item = await _repository.GetByIdAsync(id);
+        if (item == null || item.UserId != userId)
+            throw new UnauthorizedAccessException();
+
+        return item;
+    }
+
+    public async Task DeleteToDoItemForUser(int id, string userId)
+    {
+        var item = await _repository.GetByIdAsync(id);
+        if (item == null || item.UserId != userId)
+            throw new UnauthorizedAccessException();
+
+        await _repository.DeleteAsync(id);
     }
 
     public async Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize)
     {
-        try
+        var (items, totalCount) = await _repository.GetPaginatedAsync(
+            item => item.UserId == userId,
+            pageIndex,
+            pageSize
+        );
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedListViewModel<TaskViewModel>
         {
-
-            var (items, totalCount) = await _repository.GetPaginatedAsync(
-                item => item.UserId == userId,
-                pageIndex,
-                pageSize
-            );
-
-
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-
-            if (pageIndex <= 0)
+            Items = items.Select(item => new TaskViewModel
             {
-                pageIndex = 1;
-            }
-            else if (totalPages > 0 && pageIndex > totalPages)
-            {
-                pageIndex = totalPages;
-            }
-
-            return new PagedListViewModel<TaskViewModel>
-            {
-                Items = items.Select(item => new TaskViewModel
-                {
-                    Id = item.Id,
-                    Title = item.Title,
-                    Description = item.Description,
-                    IsCompleted = item.IsCompleted
-                }).ToList(),
-                PageIndex = pageIndex,
-                TotalPages = totalPages,
-                TotalCount = totalCount,
-                PageSize = pageSize
-            };
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("An error occurred while retrieving paged ToDo items.", ex);
-        }
-    }
-
-    public async Task<ToDoItem> GetToDoItemById(int id)
-    {
-        try
-        {
-            return await _repository.GetByIdAsync(id);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"An error occurred while retrieving the ToDo item with ID {id}.", ex);
-        }
-    }
-
-    public async Task AddToDoItem(ToDoItem item)
-    {
-        try
-        {
-            await _repository.AddAsync(item);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("An error occurred while adding a ToDo item.", ex);
-        }
-    }
-
-    public async Task UpdateToDoItem(ToDoItem item)
-    {
-        try
-        {
-            await _repository.UpdateAsync(item);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("An error occurred while updating the ToDo item.", ex);
-        }
-    }
-
-    public async Task DeleteToDoItem(int id)
-    {
-        try
-        {
-            await _repository.DeleteAsync(id);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"An error occurred while deleting the ToDo item with ID {id}.", ex);
-        }
+                Id = item.Id,
+                Title = item.Title,
+                Description = item.Description,
+                IsCompleted = item.IsCompleted
+            }).ToList(),
+            PageIndex = pageIndex,
+            TotalPages = totalPages,
+            TotalCount = totalCount,
+            PageSize = pageSize
+        };
     }
 }
