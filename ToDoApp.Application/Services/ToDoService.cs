@@ -1,10 +1,11 @@
-﻿using ToDoApp.Application.DTOs;
+﻿using System.Security.Claims;
+using ToDoApp.Application.DTOs;
 using ToDoApp.Application.Interfaces;
 using ToDoApp.Domain.Entities;
 
 namespace ToDoApp.Application.Services;
 
-public class ToDoService : IToDoService
+public class ToDoService
 {
     private readonly IRepository<ToDoItem> _repository;
 
@@ -13,18 +14,11 @@ public class ToDoService : IToDoService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<TaskViewModel>> GetAllToDoItemsAsync()
+    public async Task<IEnumerable<ToDoItem>> GetAllToDoItems()
     {
         try
         {
-            var items = await _repository.GetAllAsync();
-            return items.Select(item => new TaskViewModel
-            {
-                Id = item.Id,
-                Title = item.Title,
-                Description = item.Description,
-                IsCompleted = item.IsCompleted
-            });
+            return await _repository.GetAllAsync();
         }
         catch (Exception ex)
         {
@@ -36,13 +30,16 @@ public class ToDoService : IToDoService
     {
         try
         {
+
             var (items, totalCount) = await _repository.GetPaginatedAsync(
                 item => item.UserId == userId,
                 pageIndex,
                 pageSize
             );
 
+
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
 
             if (pageIndex <= 0)
             {
@@ -74,20 +71,11 @@ public class ToDoService : IToDoService
         }
     }
 
-    public async Task<TaskViewModel> GetToDoItemByIdAsync(int id)
+    public async Task<ToDoItem> GetToDoItemById(int id)
     {
         try
         {
-            var item = await _repository.GetByIdAsync(id);
-            if (item == null) return null;
-
-            return new TaskViewModel
-            {
-                Id = item.Id,
-                Title = item.Title,
-                Description = item.Description,
-                IsCompleted = item.IsCompleted
-            };
+            return await _repository.GetByIdAsync(id);
         }
         catch (Exception ex)
         {
@@ -95,18 +83,10 @@ public class ToDoService : IToDoService
         }
     }
 
-    public async Task AddToDoItemAsync(TaskViewModel model)
+    public async Task AddToDoItem(ToDoItem item)
     {
         try
         {
-            var item = new ToDoItem
-            {
-                Title = model.Title,
-                Description = model.Description,
-                IsCompleted = model.IsCompleted,
-                UserId = model.Id.ToString() 
-            };
-
             await _repository.AddAsync(item);
         }
         catch (Exception ex)
@@ -115,17 +95,10 @@ public class ToDoService : IToDoService
         }
     }
 
-    public async Task UpdateToDoItemAsync(TaskViewModel model)
+    public async Task UpdateToDoItem(ToDoItem item)
     {
         try
         {
-            var item = await _repository.GetByIdAsync(model.Id.Value);
-            if (item == null) throw new Exception("ToDo item not found.");
-
-            item.Title = model.Title;
-            item.Description = model.Description;
-            item.IsCompleted = model.IsCompleted;
-
             await _repository.UpdateAsync(item);
         }
         catch (Exception ex)
@@ -134,7 +107,7 @@ public class ToDoService : IToDoService
         }
     }
 
-    public async Task DeleteToDoItemAsync(int id)
+    public async Task DeleteToDoItem(int id)
     {
         try
         {

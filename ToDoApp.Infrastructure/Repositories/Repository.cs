@@ -5,6 +5,7 @@ using ToDoApp.Infrastructure.Persistence;
 
 namespace ToDoApp.Infrastructure.Repositories;
 
+
 public class Repository<T> : IRepository<T> where T : class
 {
     private readonly ApplicationDbContext _context;
@@ -15,6 +16,8 @@ public class Repository<T> : IRepository<T> where T : class
         _context = context;
         _dbSet = _context.Set<T>();
     }
+
+
 
     public async Task<IEnumerable<T>> GetAllAsync()
     {
@@ -49,9 +52,9 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
-        Expression<Func<T, bool>> filter,
-        int pageIndex,
-        int pageSize)
+           Expression<Func<T, bool>> filter,
+           int pageIndex,
+           int pageSize)
     {
         var query = _dbSet.Where(filter);
         var totalCount = await query.CountAsync();
@@ -64,4 +67,5 @@ public class Repository<T> : IRepository<T> where T : class
 
         return (items, totalCount);
     }
+
 }
