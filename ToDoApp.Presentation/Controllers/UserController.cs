@@ -36,6 +36,7 @@ public class UserController : Controller
             }
 
             return View(model);
+
         }
         catch (Exception ex)
         {
