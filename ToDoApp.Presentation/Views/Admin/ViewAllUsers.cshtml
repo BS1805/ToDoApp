@@ -1,13 +1,12 @@
 ﻿@model IEnumerable<dynamic>
-
+@using ToDoApp.Domain.Enums
 <h2 class="text-center">All Users</h2>
-
 <table class="table table-bordered table-striped">
     <thead>
         <tr class="table-primary">
-            
             <th>Email</th>
             <th>Total Tasks</th>
+            <th>Permissions</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -15,12 +14,28 @@
         @foreach (var userTask in Model)
         {
             <tr>
-              
                 <td>@userTask.User.Email</td>
                 <td>@userTask.TaskCount</td>
                 <td>
+                    <select id="permissions-@userTask.User.Id" multiple class="form-select">
+                        @foreach (var permission in Enum.GetValues(typeof(UserPermission)))
+                        {
+                            bool isSelected = userTask.User.Permissions.HasFlag((UserPermission)permission);
+                            if (isSelected)
+                            {
+                                <option value="@((int)permission)" selected>@permission</option>
+                            }
+                            else
+                            {
+                                <option value="@((int)permission)">@permission</option>
+                            }
+                        }
+                    </select>
+                </td>
+                <td>
                     @if (!userTask.Roles.Contains("Admin"))
                     {
+                        <button class="btn btn-primary btn-sm" onclick="updatePermissions('@userTask.User.Id')">Save</button>
                         <a asp-action="DeleteUser" asp-route-id="@userTask.User.Id" class="btn btn-danger btn-sm">
                             Delete
                         </a>
@@ -30,7 +45,31 @@
         }
     </tbody>
 </table>
+<script>
+        function updatePermissions(userId) {
+        const selectedOptions = Array.from(document.getElementById(`permissions-${userId}`).selectedOptions);
+        const selectedPermissions = selectedOptions
+            .map(option => parseInt(option.value))
+            .reduce((acc, val) => acc | val, 0);
 
+        fetch('/Admin/UpdatePermissions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, permissions: selectedPermissions })
+        }).then(response => {
+            if (response.ok) {
+                alert('Permissions updated successfully!');
+            } else {
+                alert('Failed to update permissions.');
+            }
+        }).catch(error => {
+            alert('An error occurred while updating permissions.');
+        });
+    }
+
+</script>
 <style>
     table {
         width: 100%;
@@ -69,6 +108,25 @@
         .btn-danger:hover {
             background-color: #c82333;
         }
+
+    .btn-primary {
+        color: white;
+        background-color: #007bff;
+        border: none;
+        padding: 5px 10px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .form-select {
+        width: 100%;
+        padding: 5px;
+        font-size: 14px;
+    }
 
     .table {
         width: 100%;

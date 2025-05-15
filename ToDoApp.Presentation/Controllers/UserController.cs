@@ -6,6 +6,7 @@ using ToDoApp.Application.DTOs;
 using ToDoApp.Domain.Entities;
 using System.Diagnostics;
 using ToDoApp.Application.Services;
+using ToDoApp.Domain.Enums;
 
 namespace ToDoApp.Presentation.Controllers;
 
@@ -35,6 +36,7 @@ public class UserController : Controller
             }
 
             return View(model);
+
         }
         catch (Exception ex)
         {
@@ -43,6 +45,11 @@ public class UserController : Controller
         }
     }
 
+    private bool HasPermission(UserPermission requiredPermission)
+    {
+        var userPermissions = (UserPermission)Enum.Parse(typeof(UserPermission), User.FindFirstValue("Permissions") ?? "None");
+        return userPermissions.HasFlag(requiredPermission);
+    }
 
 
 
@@ -50,6 +57,11 @@ public class UserController : Controller
 
     public IActionResult Create()
     {
+        if (!HasPermission(UserPermission.Create))
+        {
+            return Forbid();
+        }
+
         try
         {
             return View(new TaskViewModel());
@@ -64,6 +76,11 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
     {
+        if (!HasPermission(UserPermission.Create))
+        {
+            return Forbid();
+        }
+
         if (ModelState.IsValid)
         {
             try
@@ -85,20 +102,17 @@ public class UserController : Controller
                 ModelState.AddModelError(string.Empty, "An error occurred while creating the ToDo item.");
             }
         }
-        else
-        {
-            // Log validation errors
-            foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-            {
-                _logger.LogError(error.ErrorMessage);
-            }
-        }
         return View(model);
     }
 
 
     public async Task<IActionResult> Edit(int id)
     {
+        if (!HasPermission(UserPermission.Edit))
+        {
+            return Forbid();
+        }
+
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -129,6 +143,11 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(TaskViewModel model)
     {
+        if (!HasPermission(UserPermission.Edit))
+        {
+            return Forbid();
+        }
+
         if (ModelState.IsValid)
         {
             try
@@ -157,8 +176,14 @@ public class UserController : Controller
         return View(model);
     }
 
+
     public async Task<IActionResult> Delete(int id)
     {
+        if (!HasPermission(UserPermission.Delete))
+        {
+            return Forbid();
+        }
+
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -186,11 +211,14 @@ public class UserController : Controller
         }
     }
 
-
-
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(TaskViewModel model)
     {
+        if (!HasPermission(UserPermission.Delete))
+        {
+            return Forbid();
+        }
+
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -211,8 +239,14 @@ public class UserController : Controller
         }
     }
 
+
     public async Task<IActionResult> Details(int id)
     {
+        if (!HasPermission(UserPermission.Details))
+        {
+            return Forbid();
+        }
+
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -239,5 +273,6 @@ public class UserController : Controller
             return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
+
 
 }

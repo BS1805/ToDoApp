@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ToDoApp.Application.DTOs;
@@ -72,6 +73,21 @@ public class AccountController : Controller
                 if (result.Succeeded)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Email);
+                    if (user != null)
+                    {
+
+                        var existingClaims = await _userManager.GetClaimsAsync(user);
+                        var permissionClaim = existingClaims.FirstOrDefault(c => c.Type == "Permissions");
+                        if (permissionClaim != null)
+                            await _userManager.RemoveClaimAsync(user, permissionClaim);
+
+
+                        await _userManager.AddClaimAsync(user, new Claim("Permissions", user.Permissions.ToString()));
+
+
+                        await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
+                    }
+
                     if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
                         return RedirectToAction("ViewAllUsers", "Admin");
@@ -91,6 +107,7 @@ public class AccountController : Controller
         }
         return View(model);
     }
+
 
 
 

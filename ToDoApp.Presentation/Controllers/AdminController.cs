@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ToDoApp.Application.Interfaces;
 using ToDoApp.Application.Services;
 using ToDoApp.Domain.Entities;
+using ToDoApp.Domain.Enums;
 
 namespace ToDoApp.Presentation.Controllers;
 
@@ -73,6 +75,38 @@ public class AdminController : Controller
         }
 
         return View(userList);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
+    {
+        if (request == null || string.IsNullOrEmpty(request.UserId))
+            return BadRequest("Invalid request data.");
+
+        var user = await _userManager.FindByIdAsync(request.UserId);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.Permissions = request.Permissions;
+        var result = await _userManager.UpdateAsync(user);
+
+     
+        var claims = await _userManager.GetClaimsAsync(user);
+        var permissionClaim = claims.FirstOrDefault(c => c.Type == "Permissions");
+        if (permissionClaim != null)
+            await _userManager.RemoveClaimAsync(user, permissionClaim);
+        await _userManager.AddClaimAsync(user, new Claim("Permissions", user.Permissions.ToString()));
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok(new { success = true });
+    }
+
+    public class UpdatePermissionsRequest
+    {
+        public string UserId { get; set; }
+        public UserPermission Permissions { get; set; }
     }
 
 
