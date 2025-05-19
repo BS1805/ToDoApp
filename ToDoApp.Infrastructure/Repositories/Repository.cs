@@ -18,7 +18,10 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
 
-
+    public async Task<IEnumerable<Status>> GetStatusesAsync()
+    {
+        return await _context.Statuses.ToListAsync();
+    }
     public async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _dbSet.ToListAsync();

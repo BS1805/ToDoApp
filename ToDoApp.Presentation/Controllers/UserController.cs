@@ -1,181 +1,173 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using ToDoApp.Application.Interfaces;
-using ToDoApp.Application.Services;
 using ToDoApp.Application.DTOs;
-using ToDoApp.Domain.Enums;
-using System.Diagnostics;
 
 namespace ToDoApp.Presentation.Controllers;
 
-[Authorize(Policy = "UserOnly")]
 public class UserController : Controller
 {
-    private readonly IToDoService _toDoService;
-    private readonly PermissionService _permissionService;
-    private readonly ILogger<UserController> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public UserController(IToDoService toDoService, PermissionService permissionService, ILogger<UserController> logger)
+    public UserController(IHttpClientFactory httpClientFactory)
     {
-        _toDoService = toDoService;
-        _permissionService = permissionService;
-        _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<IActionResult> Index(int page = 1, int pageSize = 12)
+    public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
     {
-        try
+        var token = HttpContext.Session.GetString("JWToken");
+        if (string.IsNullOrEmpty(token))
+            return RedirectToAction("Login", "Account");
+
+        var client = _httpClientFactory.CreateClient("ToDoApi");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync($"/api/todo/user?page={page}&pageSize={pageSize}");
+        if (response.IsSuccessStatusCode)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
-            return View(model);
+            var tasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
+            return View(tasks);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while loading the User Index page.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+
+        ModelState.AddModelError(string.Empty, "Failed to load tasks.");
+        return View("Error");
     }
+    // GET: /User/Create
+    public IActionResult Create() => View(new TaskViewModel());
 
-    public IActionResult Create()
-    {
-        if (!_permissionService.HasPermission(User, UserPermission.Create))
-            return Forbid();
-
-        return View(new TaskViewModel());
-    }
-
+    // POST: /User/Create
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Create))
-            return Forbid();
-
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                await _toDoService.CreateToDoItem(model, userId);
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while creating a ToDo item.");
-                ModelState.AddModelError(string.Empty, "An error occurred while creating the ToDo item.");
-            }
+            return View(model);
         }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var response = await _httpClient.PostAsJsonAsync($"/api/todo?userId={userId}", model);
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        ModelState.AddModelError(string.Empty, "Failed to create task.");
         return View(model);
     }
 
+    // GET: /User/Edit/{id}
     public async Task<IActionResult> Edit(int id)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Edit))
-            return Forbid();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
-            return View(model);
+            var task = await _httpClient.GetFromJsonAsync<TaskViewModel>($"/api/todo/{id}?userId={userId}");
+            return View(task);
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception)
         {
-            return NotFound();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while retrieving the ToDo item with ID {id} for editing.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            ModelState.AddModelError(string.Empty, "Failed to load task.");
+            return View("Error");
         }
     }
 
-
+    // POST: /User/Edit
     [HttpPost]
     public async Task<IActionResult> Edit(TaskViewModel model)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Edit))
-            return Forbid();
-
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                await _toDoService.UpdateToDoItem(model, userId);
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"An error occurred while updating the ToDo item with ID {model.Id}.");
-                ModelState.AddModelError(string.Empty, "An error occurred while updating the ToDo item.");
-            }
+            return View(model);
         }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var response = await _httpClient.PutAsJsonAsync($"/api/todo/{model.Id}?userId={userId}", model);
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        ModelState.AddModelError(string.Empty, "Failed to update task.");
         return View(model);
     }
 
+    // GET: /User/Delete/{id}
     public async Task<IActionResult> Delete(int id)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Delete))
-            return Forbid();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
-            return View(model);
+            var task = await _httpClient.GetFromJsonAsync<TaskViewModel>($"/api/todo/{id}?userId={userId}");
+            return View(task);
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception)
         {
-            return NotFound();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while retrieving the ToDo item with ID {id} for deletion.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            ModelState.AddModelError(string.Empty, "Failed to load task.");
+            return View("Error");
         }
     }
 
+    // POST: /User/Delete/{id}
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Delete))
-            return Forbid();
-
-        try
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _toDoService.DeleteToDoItemForUser(id, userId);
+            return Unauthorized();
+        }
+
+        var response = await _httpClient.DeleteAsync($"/api/todo/{id}?userId={userId}");
+        if (response.IsSuccessStatusCode)
+        {
             return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while deleting the ToDo item with ID {id}.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+
+        ModelState.AddModelError(string.Empty, "Failed to delete task.");
+        return View("Error");
     }
 
+    // GET: /User/Details/{id}
     public async Task<IActionResult> Details(int id)
     {
-        if (!_permissionService.HasPermission(User, UserPermission.Details))
-            return Forbid();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = await _toDoService.GetTaskViewModelForUser(id, userId);
-            return View(model);
+            var task = await _httpClient.GetFromJsonAsync<TaskViewModel>($"/api/todo/{id}?userId={userId}");
+            return View(task);
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception)
         {
-            return NotFound();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while retrieving the details of the ToDo item with ID {id}.");
-            return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            ModelState.AddModelError(string.Empty, "Failed to load task details.");
+            return View("Error");
         }
     }
-
 }

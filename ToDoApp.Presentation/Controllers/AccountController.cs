@@ -1,128 +1,61 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Json;
 using ToDoApp.Application.DTOs;
-using ToDoApp.Domain.Entities;
 
 namespace ToDoApp.Presentation.Controllers;
 
 public class AccountController : Controller
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly ILogger<AccountController> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AccountController(
-        UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
-        ILogger<AccountController> logger)
+    public AccountController(IHttpClientFactory httpClientFactory)
     {
-        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    [Authorize(Roles = "Admin")]
-    public IActionResult Register() => View();
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Register(RegisterViewModel model)
-    {
-        if (ModelState.IsValid)
-        {
-            try
-            {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    // Assign the "User" role to the newly created user
-                    await _userManager.AddToRoleAsync(user, "User");
-
-                    // Redirect admin to the "View All Users" page
-                    return RedirectToAction("ViewAllUsers", "Admin");
-                }
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while registering the user.");
-                ModelState.AddModelError(string.Empty, "An error occurred while registering the user.");
-            }
-        }
-        return View(model);
+        _httpClientFactory = httpClientFactory;
     }
 
     public IActionResult Login() => View();
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
-        if (ModelState.IsValid)
+        var client = _httpClientFactory.CreateClient("ToDoApi");
+        var response = await client.PostAsJsonAsync("/api/account/login", model);
+        if (response.IsSuccessStatusCode)
         {
-            try
+            var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
+            if (result?.Token != null)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-                if (result.Succeeded)
-                {
-                    var user = await _userManager.FindByEmailAsync(model.Email);
-                    if (user != null)
-                    {
-
-                        var existingClaims = await _userManager.GetClaimsAsync(user);
-                        var permissionClaim = existingClaims.FirstOrDefault(c => c.Type == "Permissions");
-                        if (permissionClaim != null)
-                            await _userManager.RemoveClaimAsync(user, permissionClaim);
-
-
-                        await _userManager.AddClaimAsync(user, new Claim("Permissions", user.Permissions.ToString()));
-
-
-                        await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
-                    }
-
-                    if (await _userManager.IsInRoleAsync(user, "Admin"))
-                    {
-                        return RedirectToAction("ViewAllUsers", "Admin");
-                    }
-                    return RedirectToAction("Index", "User");
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while logging in.");
-                ModelState.AddModelError(string.Empty, "An error occurred while logging in.");
+                HttpContext.Session.SetString("JWToken", result.Token);
+                return RedirectToAction("Index", "User");
             }
         }
+        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
         return View(model);
     }
 
+    public IActionResult Register() => View();
 
-
-
-    public async Task<IActionResult> Logout()
+    [HttpPost]
+    public async Task<IActionResult> Register(RegisterViewModel model)
     {
-        try
+        var client = _httpClientFactory.CreateClient("ToDoApi");
+        var response = await client.PostAsJsonAsync("/api/account/register", model);
+        if (response.IsSuccessStatusCode)
         {
-            await _signInManager.SignOutAsync();
+            return RedirectToAction("Login");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while logging out.");
+        ModelState.AddModelError(string.Empty, "Failed to register user.");
+        return View(model);
+    }
 
-            throw new Exception("An error occurred while logging out.", ex);
-        }
-        return RedirectToAction("Index", "Home");
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove("JWToken");
+        return RedirectToAction("Login");
+    }
+
+    public class TokenResponse
+    {
+        public string Token { get; set; }
     }
 }

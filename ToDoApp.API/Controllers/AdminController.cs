@@ -1,0 +1,44 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using ToDoApp.Application.DTOs;
+using ToDoApp.Application.Interfaces;
+
+namespace ToDoApp.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
+public class AdminController : ControllerBase
+{
+    private readonly IUserAdminService _userAdminService;
+
+    public AdminController(IUserAdminService userAdminService)
+    {
+        _userAdminService = userAdminService;
+    }
+
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var userDtos = await _userAdminService.GetAllUsersWithDetailsAsync();
+        return Ok(userDtos);
+    }
+
+    [HttpPut("permissions")]
+    public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
+    {
+        var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, request.Permissions);
+        if (!success)
+            return BadRequest("Failed to update permissions.");
+        return NoContent();
+    }
+
+    [HttpDelete("users/{userId}")]
+    public async Task<IActionResult> DeleteUser(string userId)
+    {
+        var success = await _userAdminService.DeleteUserAsync(userId);
+        if (!success)
+            return BadRequest("Failed to delete user.");
+        return NoContent();
+    }
+}

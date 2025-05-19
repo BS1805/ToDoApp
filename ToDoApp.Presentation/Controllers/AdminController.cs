@@ -1,55 +1,44 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Json;
 using ToDoApp.Application.DTOs;
-using ToDoApp.Application.Interfaces;
-using ToDoApp.Domain.Enums;
+using ToDoApp.Domain.Entities; // (Assuming DTOs are shared or available)
 
 namespace ToDoApp.Presentation.Controllers;
 
 [Authorize(Policy = "AdminOnly")]
 public class AdminController : Controller
 {
-    private readonly IUserAdminService _userAdminService;
-    private readonly ILogger<AdminController> _logger;
+    private readonly HttpClient _httpClient;
 
-    public AdminController(IUserAdminService userAdminService, ILogger<AdminController> logger)
+    public AdminController(IHttpClientFactory httpClientFactory)
     {
-        _userAdminService = userAdminService;
-        _logger = logger;
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
-    {
-        if (request == null || string.IsNullOrEmpty(request.UserId))
-            return BadRequest("Invalid request data.");
-
-        var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, request.Permissions);
-        if (!success)
-            return BadRequest("Failed to update permissions.");
-
-        return Ok(new { success = true });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> DeleteUser(string id)
-    {
-        var success = await _userAdminService.DeleteUserAsync(id);
-        if (!success)
-            return BadRequest("Failed to delete user.");
-        return RedirectToAction("ViewAllUsers");
+        _httpClient = httpClientFactory.CreateClient("ToDoApi");
     }
 
     public async Task<IActionResult> ViewAllUsers()
     {
-        var usersWithRoles = await _userAdminService.GetAllUsersWithRolesAndTaskCountAsync();
-        var userList = usersWithRoles.Select(ur => new
-        {
-            User = ur.User,
-            Roles = ur.Roles,
-            TaskCount = ur.TaskCount
-        }).ToList();
-        return View(userList);
+        var users = await _httpClient.GetFromJsonAsync<List<(ApplicationUser User, IList<string> Roles, int TaskCount)>>("/api/admin/users");
+        return View(users);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest request)
+    {
+        var response = await _httpClient.PutAsJsonAsync("/api/admin/permissions", request);
+        if (response.IsSuccessStatusCode)
+            return RedirectToAction(nameof(ViewAllUsers));
+
+        return BadRequest("Failed to update permissions.");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteUser(string userId)
+    {
+        var response = await _httpClient.DeleteAsync($"/api/admin/users/{userId}");
+        if (response.IsSuccessStatusCode)
+            return RedirectToAction(nameof(ViewAllUsers));
+
+        return BadRequest("Failed to delete user.");
+    }
 }

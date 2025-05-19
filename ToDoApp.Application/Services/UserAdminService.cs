@@ -3,6 +3,7 @@ using ToDoApp.Application.Interfaces;
 using ToDoApp.Domain.Entities;
 using ToDoApp.Domain.Enums;
 using System.Security.Claims;
+using ToDoApp.Application.DTOs;
 
 namespace ToDoApp.Application.Services;
 
@@ -30,6 +31,25 @@ public class UserAdminService : IUserAdminService
         return result;
     }
 
+
+    public async Task<List<AdminUserDto>> GetAllUsersWithDetailsAsync()
+    {
+        var users = _userManager.Users.ToList();
+        var result = new List<AdminUserDto>();
+        foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            int taskCount = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            result.Add(new AdminUserDto
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Roles = roles,
+                TaskCount = taskCount
+            });
+        }
+        return result;
+    }
 
     public async Task<bool> UpdateUserPermissionsAsync(string userId, UserPermission permissions)
     {
