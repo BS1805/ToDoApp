@@ -10,4 +10,6 @@ public interface IUserAdminService
     Task<bool> UpdateUserPermissionsAsync(string userId, UserPermission permissions);
     Task<List<AdminUserDto>> GetAllUsersWithDetailsAsync();
     Task<bool> DeleteUserAsync(string userId);
+    Task<bool> ActivateUserAsync(string userId);
+    Task<bool> DeactivateUserAsync(string userId);
 }

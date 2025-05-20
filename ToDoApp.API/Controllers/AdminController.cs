@@ -24,6 +24,22 @@ public class AdminController : ControllerBase
         return Ok(userDtos);
     }
 
+    [HttpPost("users/{userId}/activate")]
+    public async Task<IActionResult> ActivateUser(string userId)
+    {
+        var success = await _userAdminService.ActivateUserAsync(userId);
+        if (!success) return BadRequest("Failed to activate user.");
+        return NoContent();
+    }
+
+    [HttpPost("users/{userId}/deactivate")]
+    public async Task<IActionResult> DeactivateUser(string userId)
+    {
+        var success = await _userAdminService.DeactivateUserAsync(userId);
+        if (!success) return BadRequest("Failed to deactivate user.");
+        return NoContent();
+    }
+
     [HttpPut("permissions")]
     public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
     {

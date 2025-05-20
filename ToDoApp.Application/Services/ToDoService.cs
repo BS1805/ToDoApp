@@ -15,19 +15,51 @@ public class ToDoService : IToDoService
         _statusRepository = statusRepository;
     }
 
-
     public async Task<IEnumerable<Status>> GetStatusesAsync()
     {
         return await _statusRepository.GetAllAsync();
     }
 
- 
-    public async Task<int> GetTaskCountForUserAsync(string userId)
+    public async Task<List<TaskViewModel>> GetTasksByStatusAsync(string userId, int statusId)
     {
-        var allTasks = await _repository.GetAllAsync();
-        return allTasks.Count(task => task.UserId == userId);
+        var tasks = await _repository.GetAllAsync(
+            t => t.UserId == userId && t.StatusId == statusId,
+            includeProperties: "Status"
+        );
+
+        return tasks.Select(t => new TaskViewModel
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Description = t.Description,
+            StatusId = t.StatusId,
+            StatusName = t.Status.Name
+        }).ToList();
     }
 
+    public async Task<List<DashboardTaskSummaryDto>> GetDashboardDataAsync(string userId)
+    {
+        var statuses = await GetStatusesAsync();
+        var dashboardData = new List<DashboardTaskSummaryDto>();
+
+        foreach (var status in statuses)
+        {
+            var count = await _repository.CountAsync(t => t.UserId == userId && t.StatusId == status.Id);
+            dashboardData.Add(new DashboardTaskSummaryDto
+            {
+                StatusId = status.Id,
+                StatusName = status.Name,
+                TaskCount = count
+            });
+        }
+
+        return dashboardData;
+    }
+
+    public async Task<int> GetTaskCountForUserAsync(string userId)
+    {
+        return await _repository.CountAsync(t => t.UserId == userId);
+    }
 
     public async Task<TaskViewModel> GetTaskViewModelForUser(int id, string userId)
     {
@@ -41,10 +73,9 @@ public class ToDoService : IToDoService
             Title = item.Title,
             Description = item.Description,
             StatusId = item.StatusId,
-            StatusName = item.Status.Name 
+            StatusName = item.Status.Name
         };
     }
-
 
     public async Task<ToDoItem> CreateToDoItem(TaskViewModel model, string userId)
     {
@@ -56,14 +87,13 @@ public class ToDoService : IToDoService
         {
             Title = model.Title,
             Description = model.Description,
-            StatusId = model.StatusId, 
+            StatusId = model.StatusId,
             UserId = userId
         };
         await _repository.AddAsync(toDoItem);
         return toDoItem;
     }
 
-  
     public async Task<ToDoItem> UpdateToDoItem(TaskViewModel model, string userId)
     {
         var item = await _repository.GetByIdAsync(model.Id.Value);
@@ -76,13 +106,12 @@ public class ToDoService : IToDoService
 
         item.Title = model.Title;
         item.Description = model.Description;
-        item.StatusId = model.StatusId; 
+        item.StatusId = model.StatusId;
 
         await _repository.UpdateAsync(item);
         return item;
     }
 
- 
     public async Task<ToDoItem> GetToDoItemForUser(int id, string userId)
     {
         var item = await _repository.GetByIdAsync(id);
@@ -91,7 +120,6 @@ public class ToDoService : IToDoService
 
         return item;
     }
-
 
     public async Task DeleteToDoItemForUser(int id, string userId)
     {
@@ -102,7 +130,6 @@ public class ToDoService : IToDoService
         await _repository.DeleteAsync(id);
     }
 
-  
     public async Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize)
     {
         var (items, totalCount) = await _repository.GetPaginatedAsync(
@@ -121,7 +148,7 @@ public class ToDoService : IToDoService
                 Title = item.Title,
                 Description = item.Description,
                 StatusId = item.StatusId,
-                StatusName = item.Status.Name 
+                StatusName = item.Status.Name
             }).ToList(),
             PageIndex = pageIndex,
             TotalPages = totalPages,

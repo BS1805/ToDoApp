@@ -14,6 +14,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Status> Statuses { get; set; }
 
+    public async Task TransferTasksToArchiveAsync(string userId)
+    {
+        await Database.ExecuteSqlRawAsync("EXEC TransferTasksToArchive @UserId = {0}", userId);
+    }
+
+    public async Task TransferTasksToActiveAsync(string userId)
+    {
+        await Database.ExecuteSqlRawAsync("EXEC TransferTasksToActive @UserId = {0}", userId);
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

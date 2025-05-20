@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ToDoApp.Application.DTOs;
 using ToDoApp.Application.Interfaces;
-using System.Threading.Tasks;
 
 namespace ToDoApp.API.Controllers
 {
@@ -20,14 +20,13 @@ namespace ToDoApp.API.Controllers
 
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetTasksForUser(
-         string userId,
-         [FromQuery] int page = 1,
-         [FromQuery] int pageSize = 10)
+            string userId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             var tasks = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
             return Ok(tasks);
         }
-
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(int id, [FromQuery] string userId)
@@ -83,6 +82,30 @@ namespace ToDoApp.API.Controllers
         {
             var statuses = await _toDoService.GetStatusesAsync();
             return Ok(statuses);
+        }
+
+
+        [HttpGet("tasks/status/{statusId}")]
+        public async Task<IActionResult> GetTasksByStatus(int statusId)
+        {
+            
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
+
+            
+            var tasks = await _toDoService.GetTasksByStatusAsync(userId, statusId);
+            return Ok(tasks);
+        }
+
+
+        [HttpGet("tasks/dashboard")]
+        public async Task<IActionResult> GetDashboardData()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
+
+            var dashboardData = await _toDoService.GetDashboardDataAsync(userId);
+            return Ok(dashboardData);
         }
     }
 }
