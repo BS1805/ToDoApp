@@ -1,0 +1,9 @@
+﻿@model ToDoApp.Mvc.Models.LoginViewModel
+
+<h2>Login</h2>
+<form asp-action="Login" method="post">
+    <div asp-validation-summary="All"></div>
+    <input asp-for="Email" placeholder="Email" />
+    <input asp-for="Password" placeholder="Password" type="password" />
+    <button type="submit">Login</button>
+</form>
