@@ -3,20 +3,52 @@ using ToDoApp.Application.Interfaces;
 using ToDoApp.Domain.Entities;
 using ToDoApp.Domain.Enums;
 using System.Security.Claims;
+using ToDoApp.Application.DTOs;
+
 
 namespace ToDoApp.Application.Services;
 
 public class UserAdminService : IUserAdminService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserRepository _userRepository;
+
     private readonly IToDoService _toDoService;
 
-    public UserAdminService(UserManager<ApplicationUser> userManager, IToDoService toDoService)
+    public UserAdminService(UserManager<ApplicationUser> userManager, IToDoService toDoService, IUserRepository userRepository)
     {
         _userManager = userManager;
         _toDoService = toDoService;
+        _userRepository = userRepository;
     }
 
+    public async Task<bool> ActivateUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            await _userRepository.TransferTasksToActiveAsync(userId);
+        }
+
+        return result.Succeeded;
+    }
+
+    public async Task<bool> DeactivateUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+
+  
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            await _userRepository.TransferTasksToArchiveAsync(userId);
+        }
+
+        return result.Succeeded;
+    }
     public async Task<List<(ApplicationUser User, IList<string> Roles, int TaskCount)>> GetAllUsersWithRolesAndTaskCountAsync()
     {
         var users = _userManager.Users.ToList();
@@ -30,6 +62,25 @@ public class UserAdminService : IUserAdminService
         return result;
     }
 
+
+    public async Task<List<AdminUserDto>> GetAllUsersWithDetailsAsync()
+    {
+        var users = _userManager.Users.ToList();
+        var result = new List<AdminUserDto>();
+        foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            int taskCount = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            result.Add(new AdminUserDto
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Roles = roles,
+                TaskCount = taskCount
+            });
+        }
+        return result;
+    }
 
     public async Task<bool> UpdateUserPermissionsAsync(string userId, UserPermission permissions)
     {

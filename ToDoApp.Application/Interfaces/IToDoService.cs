@@ -12,4 +12,7 @@ public interface IToDoService
     Task DeleteToDoItemForUser(int id, string userId);
     Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize);
     Task<int> GetTaskCountForUserAsync(string userId);
+    Task<IEnumerable<Status>> GetStatusesAsync();
+    Task<List<TaskViewModel>> GetTasksByStatusAsync(string userId, int statusId);
+    Task<List<DashboardTaskSummaryDto>> GetDashboardDataAsync(string userId);
 }
