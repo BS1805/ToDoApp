@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ToDoApp.Application.DTOs;
 using ToDoApp.Domain.Entities;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ToDoApp.API.Controllers
 {
@@ -29,6 +30,18 @@ namespace ToDoApp.API.Controllers
             }
             return Unauthorized("Invalid login attempt.");
         }
+
+        [HttpGet("getroles")]
+        [Authorize]
+        public async Task<IActionResult> GetRoles()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            return Ok(roles);
+        }
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterViewModel model)

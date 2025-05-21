@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using ToDoApp.Mvc.Models;
@@ -27,7 +28,24 @@ public class AccountController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            // TODO: Set authentication cookie/session as needed
+            // Retrieve the logged-in user's roles
+            var userResponse = await client.GetAsync("https://localhost:44369/api/account/getroles");
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var roles = await userResponse.Content.ReadFromJsonAsync<List<string>>();
+
+                // Redirect based on role
+                if (roles.Contains("Admin"))
+                {
+                    return RedirectToAction("Index", "Admin");
+                }
+                else if (roles.Contains("User"))
+                {
+                    return RedirectToAction("Index", "ToDo");
+                }
+            }
+
+            // Default redirect for non-admin users
             return RedirectToAction("Index", "Home");
         }
 
@@ -54,5 +72,35 @@ public class AccountController : Controller
 
         ModelState.AddModelError("", "Registration failed.");
         return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Logout()
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.PostAsync("https://localhost:44369/api/account/logout", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Login");
+        }
+
+        ModelState.AddModelError("", "Logout failed.");
+        return RedirectToAction("Index", "Home...");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetRoles()
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync("https://localhost:44369/api/account/getroles");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var roles = await response.Content.ReadFromJsonAsync<List<string>>();
+            return Json(roles);
+        }
+
+        return Unauthorized();
     }
 }

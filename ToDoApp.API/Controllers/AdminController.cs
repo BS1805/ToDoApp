@@ -7,7 +7,6 @@ namespace ToDoApp.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IUserAdminService _userAdminService;
@@ -18,7 +17,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> Index()
     {
         var userDtos = await _userAdminService.GetAllUsersWithDetailsAsync();
         return Ok(userDtos);

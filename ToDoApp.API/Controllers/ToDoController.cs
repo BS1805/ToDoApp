@@ -18,19 +18,22 @@ namespace ToDoApp.API.Controllers
             _toDoService = toDoService;
         }
 
-        [HttpGet("user/{userId}")]
+        [HttpGet("user")]
         public async Task<IActionResult> GetTasksForUser(
-            string userId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
             var tasks = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
             return Ok(tasks);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTaskById(int id, [FromQuery] string userId)
+        public async Task<IActionResult> GetTaskById(int id)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
             try
             {
                 var task = await _toDoService.GetTaskViewModelForUser(id, userId);
@@ -43,15 +46,19 @@ namespace ToDoApp.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTask([FromBody] TaskViewModel model, [FromQuery] string userId)
+        public async Task<IActionResult> CreateTask([FromBody] TaskViewModel model)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
             var task = await _toDoService.CreateToDoItem(model, userId);
-            return CreatedAtAction(nameof(GetTaskById), new { id = task.Id, userId }, task);
+            return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskViewModel model, [FromQuery] string userId)
+        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskViewModel model)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
             try
             {
                 var updatedTask = await _toDoService.UpdateToDoItem(model, userId);
@@ -64,8 +71,10 @@ namespace ToDoApp.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTask(int id, [FromQuery] string userId)
+        public async Task<IActionResult> DeleteTask(int id)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
             try
             {
                 await _toDoService.DeleteToDoItemForUser(id, userId);
@@ -84,26 +93,20 @@ namespace ToDoApp.API.Controllers
             return Ok(statuses);
         }
 
-
         [HttpGet("tasks/status/{statusId}")]
         public async Task<IActionResult> GetTasksByStatus(int statusId)
         {
-            
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
-
-            
             var tasks = await _toDoService.GetTasksByStatusAsync(userId, statusId);
             return Ok(tasks);
         }
-
 
         [HttpGet("tasks/dashboard")]
         public async Task<IActionResult> GetDashboardData()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
-
             var dashboardData = await _toDoService.GetDashboardDataAsync(userId);
             return Ok(dashboardData);
         }

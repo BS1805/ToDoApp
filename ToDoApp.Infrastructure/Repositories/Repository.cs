@@ -53,9 +53,20 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.CountAsync(filter);
     }
 
-    public async Task<T> GetByIdAsync(int id)
+    public async Task<T> GetByIdAsync(int id, string? includeProperties = null)
     {
-        return await _dbSet.FindAsync(id);
+        IQueryable<T> query = _dbSet;
+
+        if (!string.IsNullOrWhiteSpace(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+
+        return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
     }
 
     public async Task AddAsync(T entity)
@@ -81,15 +92,23 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
-           Expression<Func<T, bool>> filter,
-           int pageIndex,
-           int pageSize)
+        Expression<Func<T, bool>> filter, int pageIndex, int pageSize, string? includeProperties = null)
     {
-        var query = _dbSet.Where(filter);
-        var totalCount = await query.CountAsync();
+        IQueryable<T> query = _dbSet;
 
+        if (filter != null)
+            query = query.Where(filter);
+
+        if (!string.IsNullOrWhiteSpace(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+        var totalCount = await query.CountAsync();
         var items = await query
-            .OrderBy(e => EF.Property<object>(e, "Id"))
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

@@ -26,6 +26,10 @@ public class UserAdminService : IUserAdminService
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;
+
+        user.LockoutEnabled = false;
+        user.LockoutEnd = null;
+
         var result = await _userManager.UpdateAsync(user);
         if (result.Succeeded)
         {
@@ -40,7 +44,9 @@ public class UserAdminService : IUserAdminService
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;
 
-  
+        user.LockoutEnabled = true;
+        user.LockoutEnd = DateTimeOffset.MaxValue;
+
         var result = await _userManager.UpdateAsync(user);
         if (result.Succeeded)
         {
