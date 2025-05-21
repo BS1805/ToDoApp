@@ -63,7 +63,7 @@ public class ToDoService : IToDoService
 
     public async Task<TaskViewModel> GetTaskViewModelForUser(int id, string userId)
     {
-        var item = await _repository.GetByIdAsync(id);
+        var item = await _repository.GetByIdAsync(id, includeProperties: "Status");
         if (item == null || item.UserId != userId)
             throw new UnauthorizedAccessException();
 
@@ -73,7 +73,7 @@ public class ToDoService : IToDoService
             Title = item.Title,
             Description = item.Description,
             StatusId = item.StatusId,
-            StatusName = item.Status.Name
+            StatusName = item.Status?.Name 
         };
     }
 
@@ -135,7 +135,8 @@ public class ToDoService : IToDoService
         var (items, totalCount) = await _repository.GetPaginatedAsync(
             item => item.UserId == userId,
             pageIndex,
-            pageSize
+            pageSize,
+            includeProperties: "Status" 
         );
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -148,7 +149,7 @@ public class ToDoService : IToDoService
                 Title = item.Title,
                 Description = item.Description,
                 StatusId = item.StatusId,
-                StatusName = item.Status.Name
+                StatusName = item.Status?.Name 
             }).ToList(),
             PageIndex = pageIndex,
             TotalPages = totalPages,
@@ -156,4 +157,5 @@ public class ToDoService : IToDoService
             PageSize = pageSize
         };
     }
+
 }

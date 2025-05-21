@@ -1,0 +1,38 @@
+﻿@model List<ToDoApp.Mvc.Models.TaskViewModel>
+
+<h1>Tasks for Status: @ViewData["StatusId"]</h1>
+
+<form method="get" asp-action="TasksByStatus" class="form-inline mb-3">
+    <input type="hidden" name="statusId" value="@ViewData["StatusId"]" />
+    <div class="form-group">
+        <label for="pageSize" class="mr-2">Page Size:</label>
+        <input type="number" id="pageSize" name="pageSize" class="form-control mr-2" value="@ViewData["PageSize"]" min="1" />
+    </div>
+    <button type="submit" class="btn btn-primary">Apply</button>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var task in Model)
+        {
+            <tr>
+                <td>@task.Title</td>
+                <td>@task.Description</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info">Details</a>
+                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning">Edit</a>
+                    <form asp-action="Delete" asp-route-id="@task.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

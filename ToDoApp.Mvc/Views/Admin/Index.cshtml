@@ -1,0 +1,49 @@
+﻿@model List<AdminUserDto>
+
+<h2>Manage Users</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Task Count</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@string.Join(", ", user.Roles)</td>
+                <td>@user.TaskCount</td>
+                <td>
+                    <form asp-action="ActivateUser" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <button type="submit">Activate</button>
+                    </form>
+                    <form asp-action="DeactivateUser" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <button type="submit">Deactivate</button>
+                    </form>
+                    <form asp-action="DeleteUser" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <button type="submit">Delete</button>
+                    </form>
+                    <form asp-action="UpdatePermissions" method="post" style="display:inline;">
+                        <input type="hidden" name="UserId" value="@user.Id" />
+                        <select name="Permissions">
+                            <option value="None" selected>None</option>
+                            <option value="Create">Create</option>
+                            <option value="Details">Details</option>
+                            <option value="Edit">Edit</option>
+                            <option value="Delete">Delete</option>
+                        </select>
+                        <button type="submit">Set Permissions</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
