@@ -35,7 +35,6 @@ public class UserController : Controller
         ModelState.AddModelError(string.Empty, "Failed to load tasks.");
         return View("Error");
     }
-    // GET: /User/Create
     [HttpGet]
     public async Task<IActionResult> Create()
     {
@@ -53,30 +52,42 @@ public class UserController : Controller
         return View();
     }
 
-    // POST: /User/Create
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
     {
         if (!ModelState.IsValid)
         {
+            // Repopulate statuses for the view if validation fails
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+            if (response.IsSuccessStatusCode)
+            {
+                var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
+                ViewBag.Statuses = statuses;
+            }
             return View(model);
         }
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
+        var clientPost = _httpClientFactory.CreateClient();
+        var content = JsonContent.Create(model);
+        var responsePost = await clientPost.PostAsync($"https://localhost:44369/api/todo", content);
+
+        if (!responsePost.IsSuccessStatusCode)
         {
-            return Unauthorized();
+            ModelState.AddModelError("", "Failed to create task.");
+            // Repopulate statuses for the view if API call fails
+            var response = await clientPost.GetAsync("https://localhost:44369/api/todo/statuses");
+            if (response.IsSuccessStatusCode)
+            {
+                var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
+                ViewBag.Statuses = statuses;
+            }
+            return View(model);
         }
 
-        var response = await _httpClient.PostAsJsonAsync($"/api/todo?userId={userId}", model);
-        if (response.IsSuccessStatusCode)
-        {
-            return RedirectToAction(nameof(Index));
-        }
-
-        ModelState.AddModelError(string.Empty, "Failed to create task.");
-        return View(model);
+        return RedirectToAction("Index");
     }
+
 
     // GET: /User/Edit/{id}
     [HttpGet]

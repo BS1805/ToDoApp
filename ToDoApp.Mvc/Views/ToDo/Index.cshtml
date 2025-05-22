@@ -15,7 +15,7 @@
 
 <div class="mb-3 d-flex gap-2">
     <a asp-action="Dashboard" class="btn btn-info">Dashboard</a>
-    <a asp-action="Create" class="btn btn-primary">Create</a>
+    <a asp-action="Create" class="btn btn-primary" id="create-task-btn">Create</a>
 </div>
 
 <table class="table">
@@ -33,9 +33,9 @@
                 <td>@task.Title</td>
                 <td>@task.Description</td>
                 <td>
-                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info">Details</a>
-                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning">Edit</a>
-                    <form asp-action="Delete" asp-route-id="@task.Id" method="post" style="display:inline;">
+                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info details-btn" data-task-id="@task.Id">Details</a>
+                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning edit-btn" data-task-id="@task.Id">Edit</a>
+                    <form asp-action="Delete" asp-route-id="@task.Id" method="post" class="delete-form d-inline" data-task-id="@task.Id">
                         <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </td>
@@ -59,3 +59,7 @@
         }
     </ul>
 </nav>
+
+@section Scripts {
+    <script src="~/js/permissions.js"></script>
+}

@@ -109,10 +109,11 @@ public class UserAdminService : IUserAdminService
         var permissionClaim = claims.FirstOrDefault(c => c.Type == "Permissions");
         if (permissionClaim != null)
             await _userManager.RemoveClaimAsync(user, permissionClaim);
-        await _userManager.AddClaimAsync(user, new Claim("Permissions", user.Permissions.ToString()));
+        await _userManager.AddClaimAsync(user, new Claim("Permissions", ((int)user.Permissions).ToString()));
 
         return updateResult.Succeeded;
     }
+
 
 
     public async Task<bool> DeleteUserAsync(string userId)

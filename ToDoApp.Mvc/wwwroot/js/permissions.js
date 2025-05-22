@@ -1,44 +1,37 @@
-﻿let userPermissions = 0;
-
-async function fetchPermissions() {
-    try {
-        const response = await fetch('/api/account/permissions');
-        if (response.ok) {
-            const data = await response.json();
-            userPermissions = data.Permissions;
-        }
-    } catch (error) {
-        console.error('Failed to fetch permissions:', error);
-    }
+﻿// Show a "not allowed" message (customize as needed)
+function showNotAllowed() {
+    // You can use a modal, toast, or redirect to a static page
+    alert('You are not allowed to perform this action.');
+    // Or redirect: window.location.href = '/not-allowed.html';
 }
 
-function updateActionVisibility() {
-    const CREATE = 1;
-    const DETAILS = 2;
-    const EDIT = 4;
-    const DELETE = 8;
+// Intercept delete form submissions (for forms that use POST to delete)
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.delete-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const action = form.getAttribute('action');
+            const formData = new FormData(form);
 
-    document.querySelectorAll('[id^="details-"]').forEach(el => {
-        if ((userPermissions & DETAILS) === DETAILS) {
-            el.style.display = 'inline-block';
-        }
+            fetch(action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (response.status === 403) {
+                        showNotAllowed();
+                    } else if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('An error occurred.');
+                    }
+                });
+        });
     });
 
-    document.querySelectorAll('[id^="edit-"]').forEach(el => {
-        if ((userPermissions & EDIT) === EDIT) {
-            el.style.display = 'inline-block';
-        }
-    });
-
-    document.querySelectorAll('[id^="delete-"]').forEach(el => {
-        if ((userPermissions & DELETE) === DELETE) {
-            el.style.display = 'inline-block';
-        }
-    });
-}
-
-// Fetch permissions and update visibility on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    await fetchPermissions();
-    updateActionVisibility();
+    // Optionally, intercept AJAX for Edit/Create/Details if you use AJAX for those.
+    // For normal navigation, the backend should return a "not allowed" view or error page.
 });
