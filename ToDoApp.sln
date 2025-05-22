@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoApp.Infrastructure", "T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoApp.API", "ToDoApp.API\ToDoApp.API.csproj", "{A94811EA-3B9C-44A7-B651-C6CEA564372F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoApp.Mvc", "ToDoApp.Mvc\ToDoApp.Mvc.csproj", "{14E93040-4CC6-40C5-B26C-845154940563}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoApp.FrontEnd", "ToDoApp.Mvc\ToDoApp.FrontEnd.csproj", "{14E93040-4CC6-40C5-B26C-845154940563}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

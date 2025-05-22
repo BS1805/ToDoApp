@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-namespace ToDoApp.Mvc.Models;
+namespace ToDoApp.FrontEnd.Models;
 public class RegisterViewModel
 {
     [Required]

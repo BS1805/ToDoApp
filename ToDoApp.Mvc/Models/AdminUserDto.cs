@@ -1,4 +1,4 @@
-namespace ToDoApp.Mvc.Models;
+namespace ToDoApp.FrontEnd.Models;
 public class AdminUserDto
 {
     public string Id { get; set; }
