@@ -1,21 +1,28 @@
-﻿@model ToDoApp.FrontEnd.Models.PagedListViewModel<ToDoApp.Mvc.Models.TaskViewModel>
+﻿@model ToDoApp.FrontEnd.Models.PagedListViewModel<ToDoApp.FrontEnd.Models.TaskViewModel>
 
-<h1>Tasks</h1>
+@{
+    ViewData["Title"] = "Task List";
+    var pageSize = ViewData["PageSize"];
+}
+
+<h1>Task List</h1>
 
 <form method="get" asp-action="Index" class="form-inline mb-3">
-    <div class="form-group">
-        <label for="pageSize" class="mr-2">Page Size:</label>
-        <input type="number" id="pageSize" name="pageSize" class="form-control mr-2" value="@ViewData["PageSize"]" min="1" />
-    </div>
+    <label for="pageSize" class="mr-2">Page Size:</label>
+    <input type="number" id="pageSize" name="pageSize" class="form-control mr-2" value="@pageSize" min="1" />
     <button type="submit" class="btn btn-primary">Apply</button>
 </form>
+
+<div class="mb-3 d-flex gap-2">
+    <a asp-action="Dashboard" class="btn btn-info">Dashboard</a>
+    <a asp-action="Create" class="btn btn-primary">Create</a>
+</div>
 
 <table class="table">
     <thead>
         <tr>
             <th>Title</th>
             <th>Description</th>
-            <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -25,7 +32,6 @@
             <tr>
                 <td>@task.Title</td>
                 <td>@task.Description</td>
-                <td>@task.StatusName</td>
                 <td>
                     <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info">Details</a>
                     <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning">Edit</a>
@@ -37,3 +43,19 @@
         }
     </tbody>
 </table>
+
+<nav>
+    <ul class="pagination">
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-page="@i"
+                   asp-route-pageSize="@pageSize">
+                    @i
+                </a>
+            </li>
+        }
+    </ul>
+</nav>

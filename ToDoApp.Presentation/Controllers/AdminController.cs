@@ -22,18 +22,29 @@ public class AdminController : Controller
         return View(users);
     }
 
-    [HttpPut("permissions")]
-    public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
+    [HttpPost]
+    public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest model)
     {
-        if (!Enum.TryParse<UserPermission>(request.Permissions, out var permissions))
+        var client = _httpClientFactory.CreateClient();
+
+        // Serialize Permissions as an array of integers
+        var serializedModel = new
         {
-            return BadRequest("Invalid permissions value.");
+            UserId = model.UserId,
+            Permissions = model.Permissions
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(serializedModel), Encoding.UTF8, "application/json");
+        var response = await client.PutAsync("https://localhost:44369/api/admin/permissions", content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError("", $"Failed to update permissions. Error: {errorContent}");
+            return RedirectToAction("Index");
         }
 
-        var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, permissions);
-        if (!success)
-            return BadRequest("Failed to update permissions.");
-        return NoContent();
+        return RedirectToAction("Index");
     }
 
     [HttpPost]

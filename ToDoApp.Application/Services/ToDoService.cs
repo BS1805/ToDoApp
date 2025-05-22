@@ -20,6 +20,34 @@ public class ToDoService : IToDoService
         return await _statusRepository.GetAllAsync();
     }
 
+
+    public async Task<PagedListViewModel<TaskViewModel>> GetPagedTasksByStatusAsync(string userId, int statusId, int pageIndex, int pageSize)
+{
+    var (items, totalCount) = await _repository.GetPaginatedAsync(
+        t => t.UserId == userId && t.StatusId == statusId,
+        pageIndex,
+        pageSize,
+        includeProperties: "Status"
+    );
+
+    var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+    return new PagedListViewModel<TaskViewModel>
+    {
+        Items = items.Select(t => new TaskViewModel
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Description = t.Description,
+            StatusId = t.StatusId
+        }).ToList(),
+        PageIndex = pageIndex,
+        TotalPages = totalPages,
+        TotalCount = totalCount,
+        PageSize = pageSize
+    };
+}
+
     public async Task<List<TaskViewModel>> GetTasksByStatusAsync(string userId, int statusId)
     {
         var tasks = await _repository.GetAllAsync(
@@ -32,8 +60,8 @@ public class ToDoService : IToDoService
             Id = t.Id,
             Title = t.Title,
             Description = t.Description,
-            StatusId = t.StatusId,
-            StatusName = t.Status.Name
+            StatusId = t.StatusId
+
         }).ToList();
     }
 
@@ -73,7 +101,7 @@ public class ToDoService : IToDoService
             Title = item.Title,
             Description = item.Description,
             StatusId = item.StatusId,
-            StatusName = item.Status?.Name 
+
         };
     }
 
@@ -148,8 +176,8 @@ public class ToDoService : IToDoService
                 Id = item.Id,
                 Title = item.Title,
                 Description = item.Description,
-                StatusId = item.StatusId,
-                StatusName = item.Status?.Name 
+                StatusId = item.StatusId
+
             }).ToList(),
             PageIndex = pageIndex,
             TotalPages = totalPages,

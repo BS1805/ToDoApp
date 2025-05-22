@@ -77,12 +77,20 @@ public class UserAdminService : IUserAdminService
         {
             var roles = await _userManager.GetRolesAsync(user);
             int taskCount = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            var permissions = user.Permissions != null
+                ? ((UserPermission)user.Permissions).ToString()
+                    .Split(", ")
+                    .Select(p => (int)Enum.Parse(typeof(UserPermission), p))
+                    .ToList()
+                : new List<int>();
+
             result.Add(new AdminUserDto
             {
                 Id = user.Id,
                 UserName = user.UserName,
                 Roles = roles,
-                TaskCount = taskCount
+                TaskCount = taskCount,
+                Permissions = permissions
             });
         }
         return result;
@@ -105,6 +113,7 @@ public class UserAdminService : IUserAdminService
 
         return updateResult.Succeeded;
     }
+
 
     public async Task<bool> DeleteUserAsync(string userId)
     {

@@ -1,4 +1,4 @@
-﻿@model List<ToDoApp.FrontEnd.Models.TaskViewModel>
+﻿@model ToDoApp.FrontEnd.Models.PagedListViewModel<ToDoApp.FrontEnd.Models.TaskViewModel>
 
 <h1>Tasks for Status: @ViewData["StatusId"]</h1>
 
@@ -20,7 +20,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var task in Model)
+        @foreach (var task in Model.Items)
         {
             <tr>
                 <td>@task.Title</td>
@@ -36,3 +36,20 @@
         }
     </tbody>
 </table>
+
+<nav>
+    <ul class="pagination">
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link"
+                   asp-action="TasksByStatus"
+                   asp-route-statusId="@ViewData["StatusId"]"
+                   asp-route-page="@i"
+                   asp-route-pageSize="@ViewData["PageSize"]">
+                    @i
+                </a>
+            </li>
+        }
+    </ul>
+</nav>

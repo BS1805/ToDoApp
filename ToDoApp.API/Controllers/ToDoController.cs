@@ -93,13 +93,14 @@ namespace ToDoApp.API.Controllers
             return Ok(statuses);
         }
 
+
         [HttpGet("tasks/status/{statusId}")]
-        public async Task<IActionResult> GetTasksByStatus(int statusId)
+        public async Task<IActionResult> GetTasksByStatus(int statusId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
-            var tasks = await _toDoService.GetTasksByStatusAsync(userId, statusId);
-            return Ok(tasks);
+            var pagedTasks = await _toDoService.GetPagedTasksByStatusAsync(userId, statusId, page, pageSize);
+            return Ok(pagedTasks);
         }
 
         [HttpGet("tasks/dashboard")]

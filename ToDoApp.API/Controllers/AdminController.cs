@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoApp.Application.DTOs;
 using ToDoApp.Application.Interfaces;
+using ToDoApp.Domain.Enums;
 
 namespace ToDoApp.API.Controllers;
 
@@ -42,7 +43,9 @@ public class AdminController : ControllerBase
     [HttpPut("permissions")]
     public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
     {
-        var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, request.Permissions);
+
+        var combinedPermissions = request.Permissions?.Aggregate(0, (current, permission) => current | permission) ?? 0;
+        var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, (UserPermission)combinedPermissions);
         if (!success)
             return BadRequest("Failed to update permissions.");
         return NoContent();

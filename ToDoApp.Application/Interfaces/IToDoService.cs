@@ -15,4 +15,7 @@ public interface IToDoService
     Task<IEnumerable<Status>> GetStatusesAsync();
     Task<List<TaskViewModel>> GetTasksByStatusAsync(string userId, int statusId);
     Task<List<DashboardTaskSummaryDto>> GetDashboardDataAsync(string userId);
+    Task<PagedListViewModel<TaskViewModel>> GetPagedTasksByStatusAsync(string userId, int statusId, int pageIndex, int pageSize);
+
+
 }
