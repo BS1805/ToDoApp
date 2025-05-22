@@ -2,7 +2,7 @@
 
 <h2>Manage Users</h2>
 
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Email</th>
@@ -21,26 +21,37 @@
                 <td>
                     <form asp-action="ActivateUser" method="post" style="display:inline;">
                         <input type="hidden" name="userId" value="@user.Id" />
-                        <button type="submit">Activate</button>
+                        <button type="submit" class="btn btn-success">Activate</button>
                     </form>
                     <form asp-action="DeactivateUser" method="post" style="display:inline;">
                         <input type="hidden" name="userId" value="@user.Id" />
-                        <button type="submit">Deactivate</button>
+                        <button type="submit" class="btn btn-warning">Deactivate</button>
                     </form>
                     <form asp-action="DeleteUser" method="post" style="display:inline;">
                         <input type="hidden" name="userId" value="@user.Id" />
-                        <button type="submit">Delete</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
-                    <form asp-action="UpdatePermissions" method="post" style="display:inline;">
+                    <form asp-action="UpdatePermissions" method="post" class="mt-2">
                         <input type="hidden" name="UserId" value="@user.Id" />
-                        <select name="Permissions">
-                            <option value="None" selected>None</option>
-                            <option value="Create">Create</option>
-                            <option value="Details">Details</option>
-                            <option value="Edit">Edit</option>
-                            <option value="Delete">Delete</option>
-                        </select>
-                        <button type="submit">Set Permissions</button>
+                        <h5>Permissions:</h5>
+                        @{
+                            
+                            var permissionList = new List<(int, string)> {
+                    (1, "Create"),
+                    (2, "Details"),
+                    (4, "Edit"),
+                    (8, "Delete")
+                    };
+                        }
+                        @foreach (var perm in permissionList)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Permissions[]" value="@perm.Item1"
+                                @(user.Permissions != null && user.Permissions.Contains(perm.Item1) ? "checked" : "") />
+                                <label class="form-check-label">@perm.Item2</label>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-primary mt-2">Update Permissions</button>
                     </form>
                 </td>
             </tr>

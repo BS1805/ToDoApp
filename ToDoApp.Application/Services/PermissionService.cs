@@ -3,11 +3,18 @@ using ToDoApp.Domain.Enums;
 
 namespace ToDoApp.Application.Services;
 
-public class PermissionService
+public class PermissionService : IPermissionService
 {
-    public bool HasPermission(ClaimsPrincipal user, UserPermission requiredPermission)
+    public bool HasPermission(ClaimsPrincipal user, UserPermission permission)
     {
-        var userPermissions = (UserPermission)Enum.Parse(typeof(UserPermission), user.FindFirstValue("Permissions") ?? "None");
-        return userPermissions.HasFlag(requiredPermission);
+        var permissionsClaim = user.FindFirst("Permissions")?.Value;
+        if (string.IsNullOrEmpty(permissionsClaim)) return false;
+
+        if (int.TryParse(permissionsClaim, out var userPermissions))
+        {
+            return (userPermissions & (int)permission) == (int)permission;
+        }
+
+        return false;
     }
 }

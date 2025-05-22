@@ -36,7 +36,22 @@ public class UserController : Controller
         return View("Error");
     }
     // GET: /User/Create
-    public IActionResult Create() => View(new TaskViewModel());
+    [HttpGet]
+    public async Task<IActionResult> Create()
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return View("Error");
+        }
+
+        var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
+        ViewBag.Statuses = statuses;
+
+        return View();
+    }
 
     // POST: /User/Create
     [HttpPost]
@@ -64,24 +79,29 @@ public class UserController : Controller
     }
 
     // GET: /User/Edit/{id}
+    [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync($"https://localhost:44369/api/todo/{id}");
 
-        try
+        if (!response.IsSuccessStatusCode)
         {
-            var task = await _httpClient.GetFromJsonAsync<TaskViewModel>($"/api/todo/{id}?userId={userId}");
-            return View(task);
-        }
-        catch (Exception)
-        {
-            ModelState.AddModelError(string.Empty, "Failed to load task.");
             return View("Error");
         }
+
+        var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+
+        var statusesResponse = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+        if (!statusesResponse.IsSuccessStatusCode)
+        {
+            return View("Error");
+        }
+
+        var statuses = await statusesResponse.Content.ReadFromJsonAsync<List<Status>>();
+        ViewBag.Statuses = statuses;
+
+        return View(task);
     }
 
     // POST: /User/Edit

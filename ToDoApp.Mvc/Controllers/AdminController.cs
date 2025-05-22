@@ -80,15 +80,17 @@ public class AdminController : Controller
     public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest model)
     {
         var client = _httpClientFactory.CreateClient();
-        var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
-        var response = await client.PutAsync("https://localhost:44369/api/admin/permissions", content);
 
-        if (!response.IsSuccessStatusCode)
+        var serializedModel = new
         {
-            ModelState.AddModelError("", "Failed to update permissions.");
-            return RedirectToAction("Index");
-        }
+            UserId = model.UserId,
+            Permissions = model.Permissions
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(serializedModel), Encoding.UTF8, "application/json");
+        var response = await client.PutAsync("https://localhost:44369/api/admin/permissions", content);
 
         return RedirectToAction("Index");
     }
+
 }

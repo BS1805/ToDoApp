@@ -56,6 +56,24 @@ namespace ToDoApp.API.Controllers
             return BadRequest("Failed to register user.");
         }
 
+        [HttpGet("permissions")]
+        [Authorize]
+        public IActionResult GetPermissions()
+        {
+            var permissionsClaim = User.FindFirst("Permissions")?.Value;
+            if (string.IsNullOrEmpty(permissionsClaim))
+            {
+                return Ok(new { Permissions = 0 }); // No permissions
+            }
+
+            if (int.TryParse(permissionsClaim, out var permissions))
+            {
+                return Ok(new { Permissions = permissions });
+            }
+
+            return BadRequest("Invalid permissions format.");
+        }
+
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

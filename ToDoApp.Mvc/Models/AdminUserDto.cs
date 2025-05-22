@@ -5,4 +5,5 @@ public class AdminUserDto
     public string UserName { get; set; }
     public IList<string> Roles { get; set; }
     public int TaskCount { get; set; }
+    public List<int> Permissions { get; set; }
 }

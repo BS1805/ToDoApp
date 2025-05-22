@@ -9,5 +9,5 @@ namespace ToDoApp.Application.DTOs;
 public class UpdatePermissionsRequest
 {
     public string UserId { get; set; }
-    public UserPermission Permissions { get; set; }
+    public List<int> Permissions { get; set; }
 }

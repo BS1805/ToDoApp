@@ -65,9 +65,9 @@ public class Repository<T> : IRepository<T> where T : class
             }
         }
 
-
         return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
     }
+
 
     public async Task AddAsync(T entity)
     {

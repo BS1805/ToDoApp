@@ -38,10 +38,10 @@ public class ToDoController : Controller
             return View("Error");
         }
 
-        var tasks = await response.Content.ReadFromJsonAsync<List<TaskViewModel>>();
+        var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
         ViewData["StatusId"] = statusId;
         ViewData["PageSize"] = pageSize;
-        return View(tasks);
+        return View(pagedTasks);
     }
 
     [HttpGet]
@@ -55,10 +55,12 @@ public class ToDoController : Controller
             return View("Error");
         }
 
-        var tasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
+        var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
         ViewData["PageSize"] = pageSize;
-        return View(tasks);
+        return View(pagedTasks);
     }
+
+
 
     [HttpGet]
     public async Task<IActionResult> Details(int id)
@@ -76,7 +78,22 @@ public class ToDoController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create() => View();
+    public async Task<IActionResult> Create()
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return View("Error");
+        }
+
+        var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
+        ViewBag.Statuses = statuses;
+
+        return View();
+    }
+
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
@@ -108,8 +125,19 @@ public class ToDoController : Controller
         }
 
         var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+
+        var statusesResponse = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+        if (!statusesResponse.IsSuccessStatusCode)
+        {
+            return View("Error");
+        }
+
+        var statuses = await statusesResponse.Content.ReadFromJsonAsync<List<Status>>();
+        ViewBag.Statuses = statuses;
+
         return View(task);
     }
+
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, TaskViewModel model)
