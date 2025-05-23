@@ -35,9 +35,7 @@
                 <td>
                     <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info details-btn" data-task-id="@task.Id">Details</a>
                     <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning edit-btn" data-task-id="@task.Id">Edit</a>
-                    <form asp-action="Delete" asp-route-id="@task.Id" method="post" class="delete-form d-inline" data-task-id="@task.Id">
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
+                    <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-danger">Delete</a>
                 </td>
             </tr>
         }

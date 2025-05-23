@@ -9,7 +9,7 @@ public interface IToDoService
     Task<ToDoItem> CreateToDoItem(TaskViewModel model, string userId);
     Task<ToDoItem> UpdateToDoItem(TaskViewModel model, string userId);
     Task<ToDoItem> GetToDoItemForUser(int id, string userId);
-    Task DeleteToDoItemForUser(int id, string userId);
+    Task<bool> DeleteToDoItemForUser(int id, string userId);
     Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize);
     Task<int> GetTaskCountForUserAsync(string userId);
     Task<IEnumerable<Status>> GetStatusesAsync();

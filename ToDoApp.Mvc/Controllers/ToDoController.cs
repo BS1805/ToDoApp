@@ -12,6 +12,21 @@ public class ToDoController : Controller
         _httpClientFactory = httpClientFactory;
     }
 
+    private IActionResult HandleUnsuccessfulResponse(HttpResponseMessage response)
+    {
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return View("NoAccess");
+        }
+
+        var errorModel = new ErrorViewModel
+        {
+            RequestId = HttpContext.TraceIdentifier
+        };
+        return View("Error", errorModel);
+    }
+
     [HttpGet]
     public async Task<IActionResult> Dashboard()
     {
@@ -20,7 +35,7 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var dashboardData = await response.Content.ReadFromJsonAsync<List<DashboardTaskSummaryDto>>();
@@ -35,7 +50,7 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
@@ -52,7 +67,7 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
@@ -60,17 +75,15 @@ public class ToDoController : Controller
         return View(pagedTasks);
     }
 
-
-
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
         var client = _httpClientFactory.CreateClient();
-        var response = await client.GetAsync($"https://localhost:44369/api/todo/{id}");
+        var response = await client.GetAsync($"https://localhost:44369/api/todo/details/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
@@ -85,7 +98,7 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
@@ -93,7 +106,6 @@ public class ToDoController : Controller
 
         return View();
     }
-
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
@@ -106,6 +118,10 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                return View("NoAccess");
+            }
             ModelState.AddModelError("", "Failed to create task.");
             return View(model);
         }
@@ -117,11 +133,11 @@ public class ToDoController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var client = _httpClientFactory.CreateClient();
-        var response = await client.GetAsync($"https://localhost:44369/api/todo/{id}");
+        var response = await client.GetAsync($"https://localhost:44369/api/todo/edit/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(response);
         }
 
         var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
@@ -129,7 +145,7 @@ public class ToDoController : Controller
         var statusesResponse = await client.GetAsync("https://localhost:44369/api/todo/statuses");
         if (!statusesResponse.IsSuccessStatusCode)
         {
-            return View("Error");
+            return HandleUnsuccessfulResponse(statusesResponse);
         }
 
         var statuses = await statusesResponse.Content.ReadFromJsonAsync<List<Status>>();
@@ -137,7 +153,6 @@ public class ToDoController : Controller
 
         return View(task);
     }
-
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, TaskViewModel model)
@@ -150,6 +165,19 @@ public class ToDoController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                return View("NoAccess");
+            }
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                var errorModel = new ErrorViewModel
+                {
+                    RequestId = HttpContext.TraceIdentifier
+                };
+                ModelState.AddModelError("", "Task not found or you do not have permission to edit this task.");
+                return View("Error", errorModel);
+            }
             ModelState.AddModelError("", "Failed to update task.");
             return View(model);
         }
@@ -157,18 +185,35 @@ public class ToDoController : Controller
         return RedirectToAction("Index");
     }
 
-    [HttpPost]
+
+
+    [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
         var client = _httpClientFactory.CreateClient();
-        var response = await client.DeleteAsync($"https://localhost:44369/api/todo/{id}");
+        var response = await client.GetAsync($"https://localhost:44369/api/todo/delete/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
-            ModelState.AddModelError("", "Failed to delete task.");
-            return RedirectToAction("Index");
+            return HandleUnsuccessfulResponse(response);
+        }
+
+        var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+        return View(task);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.PostAsync($"https://localhost:44369/api/todo/delete/{id}", null);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return HandleUnsuccessfulResponse(response);
         }
 
         return RedirectToAction("Index");
     }
+
 }
