@@ -4,30 +4,41 @@
     ViewData["Title"] = "Task Dashboard";
 }
 
-<h1>Task Dashboard</h1>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Task Dashboard</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Status</th>
-            <th>Task Count</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
+    <div class="row">
         @foreach (var summary in Model)
         {
-            <tr>
-                <td>@summary.StatusName</td>
-                <td>@summary.TaskCount</td>
-                <td>
-                    <a asp-action="TasksByStatus" asp-route-statusId="@summary.StatusId" class="btn btn-primary">
-                        View Tasks
-                    </a>
-                </td>
-            </tr>
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                <div class="task-card mx-auto">
+                    <div class="card-header">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                            <span>@summary.StatusName</span>
+                            <span class="badge bg-info text-white">@summary.TaskCount Tasks</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <b>Status:</b> @summary.StatusName
+                        </p>
+                        <p class="card-text">
+                            <b>Task Count:</b> @summary.TaskCount
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <a asp-action="TasksByStatus" asp-route-statusId="@summary.StatusId" class="btn btn-outline-primary btn-details">
+                            <i class="bi bi-eye-fill"></i> View Tasks
+                        </a>
+                    </div>
+                </div>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+</div>
 
-<a asp-action="Index" class="btn btn-secondary">Back to List</a>

@@ -1,63 +1,118 @@
 ﻿@model ToDoApp.FrontEnd.Models.PagedListViewModel<ToDoApp.FrontEnd.Models.TaskViewModel>
 
 @{
-    ViewData["Title"] = "Task List";
+    ViewData["Title"] = "Your To-Do List";
     var pageSize = ViewData["PageSize"];
 }
 
-<h1>Task List</h1>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Your To-Do List</h2>
+        <div class="btn-toolbar" role="toolbar">
+            <form method="get" asp-action="Index" class="d-flex align-items-center me-3">
+                <label for="pageSize" class="form-label me-2 mb-0">Page Size:</label>
+                <input type="number" id="pageSize" name="pageSize" class="form-control form-control-sm me-2 w-auto" min="1" value="@pageSize" />
+                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            </form>
+            <a asp-action="Dashboard" class="btn btn-outline-info btn-sm me-2">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a asp-action="Create" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-plus-circle"></i> Create Task
+            </a>
+        </div>
+    </div>
 
-<form method="get" asp-action="Index" class="form-inline mb-3">
-    <label for="pageSize" class="mr-2">Page Size:</label>
-    <input type="number" id="pageSize" name="pageSize" class="form-control mr-2" value="@pageSize" min="1" />
-    <button type="submit" class="btn btn-primary">Apply</button>
-</form>
 
-<div class="mb-3 d-flex gap-2">
-    <a asp-action="Dashboard" class="btn btn-info">Dashboard</a>
-    <a asp-action="Create" class="btn btn-primary" id="create-task-btn">Create</a>
+    <div class="row">
+        @foreach (var item in Model.Items)
+        {
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                <div class="task-card mx-auto">
+                    <div class="card-header">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                            <span>@item.Title</span>
+                            <a class="text-decoration-none text-secondary" asp-action="Edit" asp-route-id="@item.Id">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-12 mb-md-0 mb-3">
+                                <div class="task-icon">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9 col-sm-12">
+                                <p class="card-text">@item.Description</p>
+                                <p class="card-text">
+                                    <b>Status: </b>
+                                    @switch (item.StatusId)
+                                    {
+                                        case 1:
+                                            <span class="badge bg-primary text-white">PENDING</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge bg-warning text-dark">IN PROGRESS</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge bg-success text-white">COMPLETED</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary text-white">UNKNOWN</span>
+                                            break;
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <a class="btn btn-outline-primary btn-details" asp-action="Details" asp-route-id="@item.Id">
+                                <i class="bi bi-eye-fill"></i> Show Details
+                            </a>
+
+                            <a class="btn btn-danger text-white" asp-action="Delete" asp-route-id="@item.Id">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="container">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex - 1)" asp-route-pageSize="@Model.PageSize">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                @if (Model.TotalPages > 0)
+                {
+                    int startPage = Math.Max(1, Model.PageIndex - 1);
+                    int endPage = Math.Min(Model.TotalPages, Model.PageIndex + 1);
+
+                    for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">
+                                @i
+                            </a>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex + 1)" asp-route-pageSize="@Model.PageSize">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var task in Model.Items)
-        {
-            <tr>
-                <td>@task.Title</td>
-                <td>@task.Description</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-info details-btn" data-task-id="@task.Id">Details</a>
-                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-warning edit-btn" data-task-id="@task.Id">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-danger">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<nav>
-    <ul class="pagination">
-        @for (int i = 1; i <= Model.TotalPages; i++)
-        {
-            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                <a class="page-link"
-                   asp-action="Index"
-                   asp-route-page="@i"
-                   asp-route-pageSize="@pageSize">
-                    @i
-                </a>
-            </li>
-        }
-    </ul>
-</nav>
-
-@section Scripts {
-    <script src="~/js/permissions.js"></script>
-}
