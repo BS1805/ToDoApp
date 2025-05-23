@@ -43,7 +43,6 @@ public class AdminController : ControllerBase
     [HttpPut("permissions")]
     public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
     {
-
         var combinedPermissions = request.Permissions?.Aggregate(0, (current, permission) => current | permission) ?? 0;
         var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, (UserPermission)combinedPermissions);
         if (!success)

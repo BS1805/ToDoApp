@@ -25,17 +25,14 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest model)
     {
-        var client = _httpClientFactory.CreateClient();
-
-        // Serialize Permissions as an array of integers
         var serializedModel = new
         {
             UserId = model.UserId,
-            Permissions = model.Permissions
+            Permissions = model.Permissions 
         };
 
         var content = new StringContent(JsonSerializer.Serialize(serializedModel), Encoding.UTF8, "application/json");
-        var response = await client.PutAsync("https://localhost:44369/api/admin/permissions", content);
+        var response = await _httpClient.PutAsync("/api/admin/permissions", content);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -46,6 +43,7 @@ public class AdminController : Controller
 
         return RedirectToAction("Index");
     }
+
 
     [HttpPost]
     public async Task<IActionResult> DeleteUser(string userId)

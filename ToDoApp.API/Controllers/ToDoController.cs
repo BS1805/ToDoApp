@@ -38,7 +38,6 @@ namespace ToDoApp.API.Controllers
         [HttpGet("tasks/dashboard")]
         public async Task<IActionResult> Dashboard()
         {
-            // No permission check for dashboard, add if needed
             var userId = GetUserId();
             var dashboardData = await _toDoService.GetDashboardDataAsync(userId);
             return Ok(dashboardData);
@@ -47,7 +46,6 @@ namespace ToDoApp.API.Controllers
         [HttpGet("tasks/status/{statusId}")]
         public async Task<IActionResult> TasksByStatus(int statusId, int page = 1, int pageSize = 10)
         {
-            // No permission check for listing, add if needed
             var userId = GetUserId();
             var pagedTasks = await _toDoService.GetPagedTasksByStatusAsync(userId, statusId, page, pageSize);
             return Ok(pagedTasks);
@@ -56,14 +54,14 @@ namespace ToDoApp.API.Controllers
         [HttpGet("user")]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
-            // No permission check for listing, add if needed
             var userId = GetUserId();
             var pagedTasks = await _toDoService.GetPagedToDoItemsAsync(userId, page, pageSize);
             return Ok(pagedTasks);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Details(int id)
+        // GET: api/todo/details/5
+        [HttpGet("details/{id}")]
+        public async Task<IActionResult> GetDetails(int id)
         {
             if ((GetUserPermissions() & (int)UserPermission.Details) == 0)
                 return Forbid();
@@ -73,6 +71,28 @@ namespace ToDoApp.API.Controllers
             if (task == null)
                 return NotFound();
             return Ok(task);
+        }
+
+        // GET: api/todo/edit/5
+        [HttpGet("edit/{id}")]
+        public async Task<IActionResult> GetEdit(int id)
+        {
+            if ((GetUserPermissions() & (int)UserPermission.Edit) == 0)
+                return Forbid();
+
+            var userId = GetUserId();
+            var task = await _toDoService.GetToDoItemForUser(id, userId);
+            if (task == null)
+                return NotFound();
+            return Ok(task);
+        }
+
+        [HttpGet("cancreate")]
+        public IActionResult CanCreate()
+        {
+            if ((GetUserPermissions() & (int)UserPermission.Create) == 0)
+                return Forbid();
+            return Ok();
         }
 
         [HttpPost]
@@ -94,19 +114,39 @@ namespace ToDoApp.API.Controllers
 
             var userId = GetUserId();
             var updated = await _toDoService.UpdateToDoItem(model, userId);
+            if (updated == null)
+                return NotFound();
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+
+
+        [HttpGet("delete/{id}")]
+        public async Task<IActionResult> GetDelete(int id)
         {
             if ((GetUserPermissions() & (int)UserPermission.Delete) == 0)
                 return Forbid();
 
             var userId = GetUserId();
-            await _toDoService.DeleteToDoItemForUser(id, userId);
+            var task = await _toDoService.GetToDoItemForUser(id, userId);
+            if (task == null)
+                return NotFound();
+            return Ok(task);
+        }
+
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> ConfirmDelete(int id)
+        {
+            if ((GetUserPermissions() & (int)UserPermission.Delete) == 0)
+                return Forbid();
+
+            var userId = GetUserId();
+            var deleted = await _toDoService.DeleteToDoItemForUser(id, userId);
+            if (!deleted)
+                return Forbid();
             return NoContent();
         }
+
 
         [HttpGet("statuses")]
         public async Task<IActionResult> GetStatuses()

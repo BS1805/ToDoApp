@@ -93,7 +93,7 @@ public class ToDoService : IToDoService
     {
         var item = await _repository.GetByIdAsync(id, includeProperties: "Status");
         if (item == null || item.UserId != userId)
-            throw new UnauthorizedAccessException();
+            return null;
 
         return new TaskViewModel
         {
@@ -122,15 +122,18 @@ public class ToDoService : IToDoService
         return toDoItem;
     }
 
-    public async Task<ToDoItem> UpdateToDoItem(TaskViewModel model, string userId)
+    public async Task<ToDoItem?> UpdateToDoItem(TaskViewModel model, string userId)
     {
+        if (model.Id == null)
+            return null;
+
         var item = await _repository.GetByIdAsync(model.Id.Value);
         if (item == null || item.UserId != userId)
-            throw new UnauthorizedAccessException();
+            return null;
 
         var status = await _statusRepository.GetByIdAsync(model.StatusId);
         if (status == null)
-            throw new ArgumentException("Invalid StatusId provided.");
+            return null;
 
         item.Title = model.Title;
         item.Description = model.Description;
@@ -139,6 +142,7 @@ public class ToDoService : IToDoService
         await _repository.UpdateAsync(item);
         return item;
     }
+
 
     public async Task<ToDoItem> GetToDoItemForUser(int id, string userId)
     {
@@ -149,13 +153,14 @@ public class ToDoService : IToDoService
         return item;
     }
 
-    public async Task DeleteToDoItemForUser(int id, string userId)
+    public async Task<bool> DeleteToDoItemForUser(int id, string userId)
     {
         var item = await _repository.GetByIdAsync(id);
         if (item == null || item.UserId != userId)
-            throw new UnauthorizedAccessException();
+            return false;
 
         await _repository.DeleteAsync(id);
+        return true;
     }
 
     public async Task<PagedListViewModel<TaskViewModel>> GetPagedToDoItemsAsync(string userId, int pageIndex, int pageSize)
