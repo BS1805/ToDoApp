@@ -94,8 +94,13 @@ public class ToDoController : Controller
     public async Task<IActionResult> Create()
     {
         var client = _httpClientFactory.CreateClient();
-        var response = await client.GetAsync("https://localhost:44369/api/todo/statuses");
+        var permResponse = await client.GetAsync("https://localhost:44369/api/todo/cancreate");
+        if (!permResponse.IsSuccessStatusCode)
+        {
+            return HandleUnsuccessfulResponse(permResponse);
+        }
 
+        var response = await client.GetAsync("https://localhost:44369/api/todo/statuses");
         if (!response.IsSuccessStatusCode)
         {
             return HandleUnsuccessfulResponse(response);
@@ -106,6 +111,7 @@ public class ToDoController : Controller
 
         return View();
     }
+
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)

@@ -87,6 +87,14 @@ namespace ToDoApp.API.Controllers
             return Ok(task);
         }
 
+        [HttpGet("cancreate")]
+        public IActionResult CanCreate()
+        {
+            if ((GetUserPermissions() & (int)UserPermission.Create) == 0)
+                return Forbid();
+            return Ok();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] TaskViewModel model)
         {
