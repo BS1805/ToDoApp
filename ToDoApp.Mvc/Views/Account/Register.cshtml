@@ -1,10 +1,35 @@
 ﻿@model ToDoApp.FrontEnd.Models.RegisterViewModel
 
-<h2>Register</h2>
-<form asp-action="Register" method="post">
-    <div asp-validation-summary="All"></div>
-    <input asp-for="Email" placeholder="Email" />
-    <input asp-for="Password" placeholder="Password" type="password" />
-    <input asp-for="ConfirmPassword" placeholder="Confirm Password" type="password" />
-    <button type="submit">Register</button>
-</form>
+<div class="login-container">
+    <div class="login-form">
+        <h4>Create Your Account</h4>
+
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="col-12">
+                <label asp-for="Email" class="form-label">Email Address</label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Password" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-success">Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
