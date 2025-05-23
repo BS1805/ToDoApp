@@ -5,5 +5,6 @@ namespace ToDoApp.Domain.Entities;
 
 public class ApplicationUser : IdentityUser
 {
-    public UserPermission Permissions { get; set; } = 0 ;
+    public UserPermission Permissions { get; set; } = UserPermission.None ;
+
 }

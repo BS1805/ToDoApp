@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ToDoApp.Domain.Enums;
 
 namespace ToDoApp.Application.DTOs
 {
@@ -10,5 +11,6 @@ namespace ToDoApp.Application.DTOs
         public int TaskCount { get; set; }
 
         public List<int> Permissions { get; set; }
+        public UserStatus Status { get; set; }
     }
 }
