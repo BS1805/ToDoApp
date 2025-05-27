@@ -9,6 +9,9 @@ using System.Security.Claims;
 
 namespace ToDoApp.API.Controllers
 {
+    /// <summary>
+    /// Provides endpoints for user authentication, registration, role retrieval, permissions, and logout.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AccountController : ControllerBase
@@ -22,7 +25,14 @@ namespace ToDoApp.API.Controllers
             _signInManager = signInManager;
         }
 
+        /// <summary>
+        /// Authenticates a user and signs them in.
+        /// </summary>
+        /// <param name="model">The login credentials.</param>
+        /// <returns>200 OK if successful, 401 Unauthorized if credentials are invalid.</returns>
         [HttpPost("login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
@@ -49,8 +59,14 @@ namespace ToDoApp.API.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Gets the roles assigned to the currently authenticated user.
+        /// </summary>
+        /// <returns>List of roles for the user.</returns>
         [HttpGet("getroles")]
         [Authorize]
+        [ProducesResponseType(typeof(IList<string>), 200)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> GetRoles()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -60,7 +76,14 @@ namespace ToDoApp.API.Controllers
             return Ok(roles);
         }
 
+        /// <summary>
+        /// Registers a new user account.
+        /// </summary>
+        /// <param name="model">The registration details.</param>
+        /// <returns>200 OK if successful, 400 Bad Request if registration fails.</returns>
         [HttpPost("register")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
         {
             var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
@@ -73,8 +96,13 @@ namespace ToDoApp.API.Controllers
             return BadRequest("Failed to register user.");
         }
 
+        /// <summary>
+        /// Gets the permissions assigned to the currently authenticated user.
+        /// </summary>
+        /// <returns>The permissions value as an integer.</returns>
         [HttpGet("permissions")]
         [Authorize]
+        [ProducesResponseType(typeof(object), 200)]
         public IActionResult GetPermissions()
         {
             var permissionsClaim = User.FindFirst("Permissions")?.Value;
@@ -91,7 +119,12 @@ namespace ToDoApp.API.Controllers
             return BadRequest("Invalid permissions format.");
         }
 
+        /// <summary>
+        /// Signs out the currently authenticated user.
+        /// </summary>
+        /// <returns>200 OK if successful.</returns>
         [HttpPost("logout")]
+        [ProducesResponseType(200)]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();

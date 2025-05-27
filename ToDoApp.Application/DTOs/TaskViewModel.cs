@@ -13,7 +13,7 @@ public class TaskViewModel
     public string Description { get; set; }
 
     [Required(ErrorMessage = "The Status field is required.")]
-    public int StatusId { get; set; }
-    // Remove: public string StatusName { get; set; }
+    public int StatusId { get; set; } = 1;
+
 }
 
