@@ -14,15 +14,12 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "ToDoApp API", Version = "v1" });
 
-    // Include XML comments for better documentation
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
         options.IncludeXmlComments(xmlPath);
 });
 
-
-// Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -38,33 +35,44 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Register application services and repository
 builder.Services.AddScoped<IToDoService, ToDoService>();
 builder.Services.AddScoped<IUserAdminService, UserAdminService>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<PermissionService>();
-
-// Register DataSeeder
 builder.Services.AddScoped<DataSeeder>();
 
-
-
+// CORS: Only allow your front-end origin
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("FrontendOnly", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7240")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-
-
 var app = builder.Build();
+app.UseCors("FrontendOnly");
 
-// Seed the database
+// API Key Middleware
+app.Use(async (context, next) =>
+{
+    var allowedApiKey = builder.Configuration["ApiKey"];
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        if (!context.Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey) ||
+            extractedApiKey != allowedApiKey)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Unauthorized");
+            return;
+        }
+    }
+    await next();
+});
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -72,16 +80,16 @@ using (var scope = app.Services.CreateScope())
     await DataSeeder.SeedAll(services);
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "ToDoApp API v1");
+        options.SupportedSubmitMethods(Array.Empty<Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod>());
     });
 }
-app.UseCors();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

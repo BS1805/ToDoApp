@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using ToDoApp.FrontEnd.Models;
@@ -9,17 +10,26 @@ public class AdminController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _apiBaseUrl;
+    private readonly string _apiKey;
 
     public AdminController(IHttpClientFactory httpClientFactory, IOptions<ApiSettings> apiSettings)
     {
         _httpClientFactory = httpClientFactory;
         _apiBaseUrl = apiSettings.Value.BaseUrl.TrimEnd('/');
+        _apiKey = apiSettings.Value.ApiKey;
+    }
+
+    private HttpClient CreateClientWithApiKey()
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-API-KEY", _apiKey);
+        return client;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/admin/users");
 
         if (!response.IsSuccessStatusCode)
@@ -35,7 +45,7 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> ActivateUser(string userId)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.PostAsync($"{_apiBaseUrl}/admin/users/{userId}/activate", null);
 
         if (!response.IsSuccessStatusCode)
@@ -50,7 +60,7 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> DeactivateUser(string userId)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.PostAsync($"{_apiBaseUrl}/admin/users/{userId}/deactivate", null);
 
         if (!response.IsSuccessStatusCode)
@@ -65,7 +75,7 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteUser(string userId)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.DeleteAsync($"{_apiBaseUrl}/admin/users/{userId}");
 
         if (!response.IsSuccessStatusCode)
@@ -80,7 +90,7 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest model)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
 
         var serializedModel = new
         {

@@ -9,11 +9,20 @@ public class ToDoController : Controller
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _apiBaseUrl;
+    private readonly string _apiKey;
 
     public ToDoController(IHttpClientFactory httpClientFactory, IOptions<ApiSettings> apiSettings)
     {
         _httpClientFactory = httpClientFactory;
         _apiBaseUrl = apiSettings.Value.BaseUrl.TrimEnd('/');
+        _apiKey = apiSettings.Value.ApiKey;
+    }
+
+    private HttpClient CreateClientWithApiKey()
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-API-KEY", _apiKey);
+        return client;
     }
 
     private IActionResult HandleUnsuccessfulResponse(HttpResponseMessage response)
@@ -34,7 +43,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Dashboard()
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/tasks/dashboard");
 
         if (!response.IsSuccessStatusCode)
@@ -49,7 +58,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> TasksByStatus(int statusId, int page = 1, int pageSize = 10)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/tasks/status/{statusId}?page={page}&pageSize={pageSize}");
 
         if (!response.IsSuccessStatusCode)
@@ -66,7 +75,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/user?page={page}&pageSize={pageSize}");
 
         if (!response.IsSuccessStatusCode)
@@ -82,7 +91,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/details/{id}");
 
         if (!response.IsSuccessStatusCode)
@@ -97,7 +106,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var permResponse = await client.GetAsync($"{_apiBaseUrl}/todo/cancreate");
         if (!permResponse.IsSuccessStatusCode)
         {
@@ -121,7 +130,7 @@ public class ToDoController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var content = JsonContent.Create(model);
         var response = await client.PostAsync($"{_apiBaseUrl}/todo", content);
 
@@ -141,7 +150,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/edit/{id}");
 
         if (!response.IsSuccessStatusCode)
@@ -168,7 +177,7 @@ public class ToDoController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var content = JsonContent.Create(model);
         var response = await client.PutAsync($"{_apiBaseUrl}/todo/{id}", content);
 
@@ -197,7 +206,7 @@ public class ToDoController : Controller
     [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.GetAsync($"{_apiBaseUrl}/todo/delete/{id}");
 
         if (!response.IsSuccessStatusCode)
@@ -212,7 +221,7 @@ public class ToDoController : Controller
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = CreateClientWithApiKey();
         var response = await client.PostAsync($"{_apiBaseUrl}/todo/delete/{id}", null);
 
         if (!response.IsSuccessStatusCode)
