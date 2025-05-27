@@ -67,7 +67,7 @@ public class AccountController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            return RedirectToAction("Login");
+            return RedirectToAction("Index", "Admin");
         }
 
         ModelState.AddModelError("", "Registration failed.");
