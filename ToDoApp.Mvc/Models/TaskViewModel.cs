@@ -14,8 +14,8 @@ namespace ToDoApp.FrontEnd.Models
 
         [Required(ErrorMessage = "The Status field is required.")]
         public int StatusId { get; set; } = 1;
-
     }
+
 
 
 

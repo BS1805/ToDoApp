@@ -5,14 +5,12 @@ using ToDoApp.Domain.Enums;
 using System.Security.Claims;
 using ToDoApp.Application.DTOs;
 
-
 namespace ToDoApp.Application.Services;
 
 public class UserAdminService : IUserAdminService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUserRepository _userRepository;
-
     private readonly IToDoService _toDoService;
 
     public UserAdminService(UserManager<ApplicationUser> userManager, IToDoService toDoService, IUserRepository userRepository)
@@ -22,7 +20,7 @@ public class UserAdminService : IUserAdminService
         _userRepository = userRepository;
     }
 
-    public async Task<bool> ActivateUserAsync(string userId)
+    public async Task<object> ActivateUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;
@@ -39,7 +37,7 @@ public class UserAdminService : IUserAdminService
         return result.Succeeded;
     }
 
-    public async Task<bool> DeactivateUserAsync(string userId)
+    public async Task<object> DeactivateUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;
@@ -55,28 +53,30 @@ public class UserAdminService : IUserAdminService
 
         return result.Succeeded;
     }
-    public async Task<List<(ApplicationUser User, IList<string> Roles, int TaskCount)>> GetAllUsersWithRolesAndTaskCountAsync()
+
+    public async Task<object> GetAllUsersWithRolesAndTaskCountAsync()
     {
         var users = _userManager.Users.ToList();
         var result = new List<(ApplicationUser, IList<string>, int)>();
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
-            int taskCount = await _toDoService.GetTaskCountForUserAsync(user.Id); 
+            var taskCountObj = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            int taskCount = taskCountObj is int i ? i : 0;
             result.Add((user, roles, taskCount));
         }
         return result;
     }
 
-
-    public async Task<List<AdminUserDto>> GetAllUsersWithDetailsAsync()
+    public async Task<object> GetAllUsersWithDetailsAsync()
     {
         var users = _userManager.Users.ToList();
         var result = new List<AdminUserDto>();
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
-            int taskCount = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            var taskCountObj = await _toDoService.GetTaskCountForUserAsync(user.Id);
+            int taskCount = taskCountObj is int i ? i : 0;
             var permissions = user.Permissions != null
                 ? ((UserPermission)user.Permissions).ToString()
                     .Split(", ")
@@ -96,7 +96,7 @@ public class UserAdminService : IUserAdminService
         return result;
     }
 
-    public async Task<bool> UpdateUserPermissionsAsync(string userId, UserPermission permissions)
+    public async Task<object> UpdateUserPermissionsAsync(string userId, UserPermission permissions)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;
@@ -114,9 +114,7 @@ public class UserAdminService : IUserAdminService
         return updateResult.Succeeded;
     }
 
-
-
-    public async Task<bool> DeleteUserAsync(string userId)
+    public async Task<object> DeleteUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return false;

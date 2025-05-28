@@ -25,6 +25,21 @@ public class ToDoController : Controller
         return client;
     }
 
+    private async Task PopulateStatusesAsync()
+    {
+        var client = CreateClientWithApiKey();
+        var response = await client.GetAsync($"{_apiBaseUrl}/todo/statuses");
+        if (response.IsSuccessStatusCode)
+        {
+            var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
+            ViewBag.Statuses = statuses ?? new List<Status>();
+        }
+        else
+        {
+            ViewBag.Statuses = new List<Status>();
+        }
+    }
+
     private IActionResult HandleUnsuccessfulResponse(HttpResponseMessage response)
     {
         if (response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
@@ -51,7 +66,8 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var dashboardData = await response.Content.ReadFromJsonAsync<List<DashboardTaskSummaryDto>>();
+        var dashboardDataObj = await response.Content.ReadFromJsonAsync<object>();
+        var dashboardData = JsonSerializer.Deserialize<List<DashboardTaskSummaryDto>>(dashboardDataObj?.ToString() ?? "[]");
         return View(dashboardData);
     }
 
@@ -66,12 +82,12 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
+        var pagedTasksObj = await response.Content.ReadFromJsonAsync<object>();
+        var pagedTasks = JsonSerializer.Deserialize<PagedListViewModel<TaskViewModel>>(pagedTasksObj?.ToString() ?? "{}");
         ViewData["StatusId"] = statusId;
         ViewData["PageSize"] = pageSize;
         return View(pagedTasks);
     }
-
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
     {
@@ -84,9 +100,28 @@ public class ToDoController : Controller
         }
 
         var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
+
+        if (pagedTasks == null)
+        {
+            pagedTasks = new PagedListViewModel<TaskViewModel>
+            {
+                Items = new List<TaskViewModel>(),
+                PageIndex = page,
+                PageSize = pageSize,
+                TotalPages = 0,
+                TotalCount = 0
+            };
+        }
+        else if (pagedTasks.Items == null)
+        {
+            pagedTasks.Items = new List<TaskViewModel>();
+        }
+
         ViewData["PageSize"] = pageSize;
         return View(pagedTasks);
     }
+
+
 
     [HttpGet]
     public async Task<IActionResult> Details(int id)
@@ -99,7 +134,8 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+        var taskObj = await response.Content.ReadFromJsonAsync<object>();
+        var task = JsonSerializer.Deserialize<TaskViewModel>(taskObj?.ToString() ?? "{}");
         return View(task);
     }
 
@@ -113,22 +149,18 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(permResponse);
         }
 
-        var response = await client.GetAsync($"{_apiBaseUrl}/todo/statuses");
-        if (!response.IsSuccessStatusCode)
-        {
-            return HandleUnsuccessfulResponse(response);
-        }
-
-        var statuses = await response.Content.ReadFromJsonAsync<List<Status>>();
-        ViewBag.Statuses = statuses;
-
+        await PopulateStatusesAsync();
         return View();
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            await PopulateStatusesAsync();
+            return View(model);
+        }
 
         var client = CreateClientWithApiKey();
         var content = JsonContent.Create(model);
@@ -141,6 +173,7 @@ public class ToDoController : Controller
                 return View("NoAccess");
             }
             ModelState.AddModelError("", "Failed to create task.");
+            await PopulateStatusesAsync();
             return View(model);
         }
 
@@ -158,24 +191,21 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+        var taskObj = await response.Content.ReadFromJsonAsync<object>();
+        var task = JsonSerializer.Deserialize<TaskViewModel>(taskObj?.ToString() ?? "{}");
 
-        var statusesResponse = await client.GetAsync($"{_apiBaseUrl}/todo/statuses");
-        if (!statusesResponse.IsSuccessStatusCode)
-        {
-            return HandleUnsuccessfulResponse(statusesResponse);
-        }
-
-        var statuses = await statusesResponse.Content.ReadFromJsonAsync<List<Status>>();
-        ViewBag.Statuses = statuses;
-
+        await PopulateStatusesAsync();
         return View(task);
     }
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, TaskViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            await PopulateStatusesAsync();
+            return View(model);
+        }
 
         var client = CreateClientWithApiKey();
         var content = JsonContent.Create(model);
@@ -197,6 +227,7 @@ public class ToDoController : Controller
                 return View("Error", errorModel);
             }
             ModelState.AddModelError("", "Failed to update task.");
+            await PopulateStatusesAsync();
             return View(model);
         }
 
@@ -214,7 +245,8 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var task = await response.Content.ReadFromJsonAsync<TaskViewModel>();
+        var taskObj = await response.Content.ReadFromJsonAsync<object>();
+        var task = JsonSerializer.Deserialize<TaskViewModel>(taskObj?.ToString() ?? "{}");
         return View(task);
     }
 

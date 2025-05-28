@@ -5,7 +5,7 @@ namespace ToDoApp.Application.Services;
 
 public class PermissionService : IPermissionService
 {
-    public bool HasPermission(ClaimsPrincipal user, UserPermission permission)
+    public object HasPermission(ClaimsPrincipal user, UserPermission permission)
     {
         var permissionsClaim = user.FindFirst("Permissions")?.Value;
         if (string.IsNullOrEmpty(permissionsClaim)) return false;

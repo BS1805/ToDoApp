@@ -177,7 +177,7 @@ namespace ToDoApp.API.Controllers
 
             var userId = GetUserId();
             var deleted = await _toDoService.DeleteToDoItemForUser(id, userId);
-            if (!deleted)
+            if (deleted is bool b && !b)
                 return Forbid();
             return NoContent();
         }

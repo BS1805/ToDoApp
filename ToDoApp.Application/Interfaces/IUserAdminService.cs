@@ -6,10 +6,10 @@ namespace ToDoApp.Application.Interfaces;
 
 public interface IUserAdminService
 {
-    Task<List<(ApplicationUser User, IList<string> Roles, int TaskCount)>> GetAllUsersWithRolesAndTaskCountAsync();
-    Task<bool> UpdateUserPermissionsAsync(string userId, UserPermission permissions);
-    Task<List<AdminUserDto>> GetAllUsersWithDetailsAsync();
-    Task<bool> DeleteUserAsync(string userId);
-    Task<bool> ActivateUserAsync(string userId);
-    Task<bool> DeactivateUserAsync(string userId);
+    Task<object> GetAllUsersWithRolesAndTaskCountAsync();
+    Task<object> UpdateUserPermissionsAsync(string userId, UserPermission permissions);
+    Task<object> GetAllUsersWithDetailsAsync();
+    Task<object> DeleteUserAsync(string userId);
+    Task<object> ActivateUserAsync(string userId);
+    Task<object> DeactivateUserAsync(string userId);
 }

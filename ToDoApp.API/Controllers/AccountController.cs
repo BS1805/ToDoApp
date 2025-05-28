@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
+using System.Linq;
 
 namespace ToDoApp.API.Controllers
 {
@@ -31,17 +32,17 @@ namespace ToDoApp.API.Controllers
         /// <param name="model">The login credentials.</param>
         /// <returns>200 OK if successful, 401 Unauthorized if credentials are invalid.</returns>
         [HttpPost("login")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(401)]
-        public async Task<IActionResult> Login([FromBody] LoginViewModel model)
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 401)]
+        public async Task<object> Login([FromBody] LoginViewModel model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
-                return Unauthorized("Invalid login attempt.");
+                return Unauthorized(new { Message = "Invalid login attempt." });
 
             var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, false);
             if (!result.Succeeded)
-                return Unauthorized("Invalid login attempt.");
+                return Unauthorized(new { Message = "Invalid login attempt." });
 
             // Remove existing claims and add the Permissions claim
             var principal = await _signInManager.CreateUserPrincipalAsync(user);
@@ -56,7 +57,7 @@ namespace ToDoApp.API.Controllers
                 new ClaimsPrincipal(identity)
             );
 
-            return Ok();
+            return Ok(new { Message = "Login successful." });
         }
 
         /// <summary>
@@ -65,12 +66,12 @@ namespace ToDoApp.API.Controllers
         /// <returns>List of roles for the user.</returns>
         [HttpGet("getroles")]
         [Authorize]
-        [ProducesResponseType(typeof(IList<string>), 200)]
-        [ProducesResponseType(401)]
-        public async Task<IActionResult> GetRoles()
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 401)]
+        public async Task<object> GetRoles()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null) return Unauthorized(new { Message = "Unauthorized" });
 
             var roles = await _userManager.GetRolesAsync(user);
             return Ok(roles);
@@ -82,18 +83,20 @@ namespace ToDoApp.API.Controllers
         /// <param name="model">The registration details.</param>
         /// <returns>200 OK if successful, 400 Bad Request if registration fails.</returns>
         [HttpPost("register")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(typeof(object), 400)]
+        public async Task<object> Register([FromBody] RegisterViewModel model)
         {
             var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(user, "User");
-                return Ok();
+                return Ok(new { Message = "Registration successful." });
             }
-            return BadRequest("Failed to register user.");
+            // Return all errors as a single string or as a list
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return BadRequest(new { Message = "Failed to register user.", Errors = errors });
         }
 
         /// <summary>
@@ -103,7 +106,7 @@ namespace ToDoApp.API.Controllers
         [HttpGet("permissions")]
         [Authorize]
         [ProducesResponseType(typeof(object), 200)]
-        public IActionResult GetPermissions()
+        public object GetPermissions()
         {
             var permissionsClaim = User.FindFirst("Permissions")?.Value;
             if (string.IsNullOrEmpty(permissionsClaim))
@@ -116,7 +119,7 @@ namespace ToDoApp.API.Controllers
                 return Ok(new { Permissions = permissions });
             }
 
-            return BadRequest("Invalid permissions format.");
+            return BadRequest(new { Message = "Invalid permissions format." });
         }
 
         /// <summary>
@@ -124,11 +127,11 @@ namespace ToDoApp.API.Controllers
         /// </summary>
         /// <returns>200 OK if successful.</returns>
         [HttpPost("logout")]
-        [ProducesResponseType(200)]
-        public async Task<IActionResult> Logout()
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<object> Logout()
         {
             await _signInManager.SignOutAsync();
-            return Ok();
+            return Ok(new { Message = "Logout successful." });
         }
     }
 }

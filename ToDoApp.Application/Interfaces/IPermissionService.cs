@@ -5,5 +5,5 @@ namespace ToDoApp.Application.Services;
 
 public interface IPermissionService
 {
-    bool HasPermission(ClaimsPrincipal user, UserPermission permission);
+    object HasPermission(ClaimsPrincipal user, UserPermission permission);
 }

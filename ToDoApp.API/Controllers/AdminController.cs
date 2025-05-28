@@ -29,7 +29,8 @@ namespace ToDoApp.API.Controllers
         [ProducesResponseType(typeof(List<AdminUserDto>), 200)]
         public async Task<IActionResult> Index()
         {
-            var userDtos = await _userAdminService.GetAllUsersWithDetailsAsync();
+            var result = await _userAdminService.GetAllUsersWithDetailsAsync();
+            var userDtos = result as List<AdminUserDto>;
             return Ok(userDtos);
         }
 
@@ -43,7 +44,8 @@ namespace ToDoApp.API.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> ActivateUser(string userId)
         {
-            var success = await _userAdminService.ActivateUserAsync(userId);
+            var result = await _userAdminService.ActivateUserAsync(userId);
+            var success = result is bool b && b;
             if (!success) return BadRequest("Failed to activate user.");
             return NoContent();
         }
@@ -58,7 +60,8 @@ namespace ToDoApp.API.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeactivateUser(string userId)
         {
-            var success = await _userAdminService.DeactivateUserAsync(userId);
+            var result = await _userAdminService.DeactivateUserAsync(userId);
+            var success = result is bool b && b;
             if (!success) return BadRequest("Failed to deactivate user.");
             return NoContent();
         }
@@ -74,7 +77,8 @@ namespace ToDoApp.API.Controllers
         public async Task<IActionResult> UpdatePermissions([FromBody] UpdatePermissionsRequest request)
         {
             var combinedPermissions = request.Permissions?.Aggregate(0, (current, permission) => current | permission) ?? 0;
-            var success = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, (UserPermission)combinedPermissions);
+            var result = await _userAdminService.UpdateUserPermissionsAsync(request.UserId, (UserPermission)combinedPermissions);
+            var success = result is bool b && b;
             if (!success)
                 return BadRequest("Failed to update permissions.");
             return NoContent();
@@ -90,7 +94,8 @@ namespace ToDoApp.API.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteUser(string userId)
         {
-            var success = await _userAdminService.DeleteUserAsync(userId);
+            var result = await _userAdminService.DeleteUserAsync(userId);
+            var success = result is bool b && b;
             if (!success)
                 return BadRequest("Failed to delete user.");
             return NoContent();
