@@ -84,10 +84,29 @@ public class ToDoController : Controller
 
         var pagedTasksObj = await response.Content.ReadFromJsonAsync<object>();
         var pagedTasks = JsonSerializer.Deserialize<PagedListViewModel<TaskViewModel>>(pagedTasksObj?.ToString() ?? "{}");
+
+        // Ensure pagedTasks and Items are not null
+        if (pagedTasks == null)
+        {
+            pagedTasks = new PagedListViewModel<TaskViewModel>
+            {
+                Items = new List<TaskViewModel>(),
+                PageIndex = page,
+                PageSize = pageSize,
+                TotalPages = 0,
+                TotalCount = 0
+            };
+        }
+        else if (pagedTasks.Items == null)
+        {
+            pagedTasks.Items = new List<TaskViewModel>();
+        }
+
         ViewData["StatusId"] = statusId;
         ViewData["PageSize"] = pageSize;
         return View(pagedTasks);
     }
+
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
     {
