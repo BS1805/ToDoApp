@@ -21,7 +21,15 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.MigrationsAssembly("ToDoApp.Infrastructure");
+            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+        }
+    )
+);
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -47,7 +55,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendOnly", policy =>
     {
-        policy.WithOrigins("https://localhost:7240")
+        policy.WithOrigins("https://localhost:5001")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -73,12 +81,19 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// --- Automatic database migration ---
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var seeder = services.GetRequiredService<DataSeeder>();
-    await DataSeeder.SeedAll(services);
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync(); // Use async for best practice
+
+    var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+    await DataSeeder.SeedAll(scope.ServiceProvider);
 }
+// ------------------------------------
+
+// Add a root endpoint for a friendly message
+app.MapGet("/", () => "ToDoApp API is running.");
 
 if (app.Environment.IsDevelopment())
 {
