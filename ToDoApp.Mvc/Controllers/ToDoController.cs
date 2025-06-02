@@ -150,8 +150,11 @@ public class ToDoController : Controller
         }
 
         await PopulateStatusesAsync();
+        ViewBag.ApiBaseUrl = _apiBaseUrl;
+        ViewBag.ApiKey = _apiKey;
         return View();
     }
+
 
     [HttpPost]
     public async Task<IActionResult> Create(TaskViewModel model)

@@ -1,8 +1,17 @@
 ﻿@model ToDoApp.FrontEnd.Models.TaskViewModel
 
+@{
+    ViewData["Title"] = "Create Task";
+    // These are set in the controller's Create GET action
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "";
+    var apiKey = ViewBag.ApiKey as string ?? "";
+}
+
 <h1>Create Task</h1>
 
-<form asp-action="Create" method="post">
+<div id="create-task-alert"></div>
+
+<form id="create-task-form" autocomplete="off">
     <div class="form-group">
         <label asp-for="Title"></label>
         <input asp-for="Title" class="form-control" />
@@ -18,7 +27,7 @@
         @foreach (var status in ViewBag.Statuses)
         {
             <div class="form-check">
-                <input type="radio" asp-for="StatusId" class="form-check-input" value="@status.Id" />
+                <input type="radio" asp-for="StatusId" class="form-check-input" value="@status.Id" name="StatusId" />
                 <label class="form-check-label">@status.Name</label>
             </div>
         }
@@ -27,3 +36,52 @@
     <button type="submit" class="btn btn-success">Create</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+    <script>
+        document.getElementById('create-task-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const statusId = form.querySelector('input[name="StatusId"]:checked')?.value;
+
+            const data = {
+                Title: form.Title.value,
+                Description: form.Description.value,
+                StatusId: statusId
+            };
+
+            const apiUrl = 'https://localhost:44369/api/todo';
+            const apiKey = '12345678';
+
+            if (!data.Title || !data.Description || !data.StatusId) {
+                document.getElementById('create-task-alert').innerHTML =
+                    `<div class="alert alert-danger">All fields are required.</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': apiKey
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include' // Ensures cookies are sent
+                });
+
+                if (response.ok) {
+                    window.location.href = '@Url.Action("Index", "ToDo")';
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('create-task-alert').innerHTML =
+                        `<div class="alert alert-danger">Failed to create task. ${errorText}</div>`;
+                }
+            } catch (err) {
+                document.getElementById('create-task-alert').innerHTML =
+                    `<div class="alert alert-danger">Error: ${err.message}</div>`;
+            }
+        });
+    </script>
+}

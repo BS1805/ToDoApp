@@ -11,7 +11,7 @@ namespace ToDoApp.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+
     public class ToDoController : ControllerBase
     {
         private readonly IToDoService _toDoService;
@@ -114,14 +114,16 @@ namespace ToDoApp.API.Controllers
         /// Creates a new task for the current user.
         /// </summary>
         [HttpPost]
+ 
         [ProducesResponseType(typeof(TaskViewModel), 200)]
         [ProducesResponseType(403)]
         public async Task<IActionResult> Create([FromBody] TaskViewModel model)
         {
+            var userId = GetUserId();
             if ((GetUserPermissions() & (int)UserPermission.Create) == 0)
                 return Forbid();
 
-            var userId = GetUserId();
+           // var userId = GetUserId();
             var created = await _toDoService.CreateToDoItem(model, userId);
             return Ok(created);
         }

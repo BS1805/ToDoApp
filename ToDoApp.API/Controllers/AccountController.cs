@@ -51,6 +51,7 @@ namespace ToDoApp.API.Controllers
             if (existingClaim != null)
                 identity.RemoveClaim(existingClaim);
             identity.AddClaim(new Claim("Permissions", ((int)user.Permissions).ToString()));
+            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
 
             await _signInManager.Context.SignInAsync(
                 IdentityConstants.ApplicationScheme,

@@ -35,6 +35,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// ADD THIS BLOCK
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 builder.Services.AddScoped<IToDoService, ToDoService>();
 builder.Services.AddScoped<IUserAdminService, UserAdminService>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -45,20 +52,30 @@ builder.Services.AddScoped<DataSeeder>();
 // CORS: Only allow your front-end origin
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendOnly", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:7240")
+        policy.WithOrigins("https://localhost:7260")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
-app.UseCors("FrontendOnly");
 
-// API Key Middleware
+// CORS must be before any custom middleware
+app.UseCors("AllowFrontend");
+
+// API Key Middleware (allow OPTIONS requests for CORS preflight)
 app.Use(async (context, next) =>
 {
+    // Allow CORS preflight requests through
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 204;
+        return;
+    }
+
     var allowedApiKey = builder.Configuration["ApiKey"];
     if (context.Request.Path.StartsWithSegments("/api"))
     {
