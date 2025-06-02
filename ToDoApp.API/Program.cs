@@ -89,7 +89,6 @@ if (app.Environment.IsDevelopment())
         options.SupportedSubmitMethods(Array.Empty<Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod>());
     });
 }
-
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

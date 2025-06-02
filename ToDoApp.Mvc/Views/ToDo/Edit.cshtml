@@ -19,9 +19,17 @@
         @foreach (var status in ViewBag.Statuses)
         {
             <div class="form-check">
-                <input type="radio" asp-for="StatusId" class="form-check-input" value="@status.Id" @@(Model.StatusId == status.Id ? "checked" : "") />
+                @if (Model.StatusId == status.Id)
+                {
+                    <input type="radio" asp-for="StatusId" class="form-check-input" value="@status.Id" checked="checked" />
+                }
+                else
+                {
+                    <input type="radio" asp-for="StatusId" class="form-check-input" value="@status.Id" />
+                }
                 <label class="form-check-label">@status.Name</label>
             </div>
+
         }
         <span asp-validation-for="StatusId" class="text-danger"></span>
     </div>
