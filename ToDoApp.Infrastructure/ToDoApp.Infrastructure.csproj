@@ -24,6 +24,7 @@
     <ProjectReference Include="..\ToDoApp.Domain\ToDoApp.Domain.csproj" />
   </ItemGroup>
 
+	
   <ItemGroup>
     <Folder Include="Migrations\" />
   </ItemGroup>

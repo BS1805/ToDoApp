@@ -9,56 +9,57 @@ public class DataSeeder
 {
     public static async Task SeedRolesAndAdminUser(IServiceProvider serviceProvider)
     {
-        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        if (!await roleManager.RoleExistsAsync("User"))
+        try
         {
-            await roleManager.CreateAsync(new IdentityRole("User"));
-        }
-        if (!await roleManager.RoleExistsAsync("Admin"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-        }
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            if (!await roleManager.RoleExistsAsync("User"))
+                await roleManager.CreateAsync(new IdentityRole("User"));
 
-        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var adminEmail = "hasib@gmail.com";
-        var adminPassword = "123";
+            if (!await roleManager.RoleExistsAsync("Admin"))
+                await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
-        {
-            adminUser = new ApplicationUser
+            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var adminEmail = "hasib@gmail.com";
+            var adminPassword = "123";
+
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
             {
-                UserName = adminEmail,
-                Email = adminEmail
-            };
-            var result = await userManager.CreateAsync(adminUser, adminPassword);
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                if (result.Succeeded)
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Seeder] Error in SeedRolesAndAdminUser: {ex.Message}");
         }
     }
 
     public static async Task SeedStatuses(IServiceProvider serviceProvider)
     {
-        var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
-
-       
-        await dbContext.Database.EnsureCreatedAsync();
-
-      
-        if (!await dbContext.Statuses.AnyAsync())
+        try
         {
-            var statuses = new List<Status>
-   {
-       new Status { Name = "Pending" },
-       new Status { Name = "In Progress" },
-       new Status { Name = "Completed" }
-   };
+            var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            await dbContext.Database.EnsureCreatedAsync();
 
+            if (!await dbContext.Statuses.AnyAsync())
+            {
+                var statuses = new List<Status>
+                {
+                    new Status { Name = "Pending" },
+                    new Status { Name = "In Progress" },
+                    new Status { Name = "Completed" }
+                };
 
-            await dbContext.Statuses.AddRangeAsync(statuses);
-            await dbContext.SaveChangesAsync();
+                await dbContext.Statuses.AddRangeAsync(statuses);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Seeder] Error in SeedStatuses: {ex.Message}");
         }
     }
 
@@ -68,4 +69,3 @@ public class DataSeeder
         await SeedStatuses(serviceProvider);
     }
 }
-

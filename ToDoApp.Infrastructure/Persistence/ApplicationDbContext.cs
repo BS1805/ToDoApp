@@ -14,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Status> Statuses { get; set; }
 
+
     public async Task TransferTasksToArchiveAsync(string userId)
     {
         await Database.ExecuteSqlRawAsync("EXEC TransferTasksToArchive @UserId = {0}", userId);

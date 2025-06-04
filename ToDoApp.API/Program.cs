@@ -8,6 +8,7 @@ using ToDoApp.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -50,7 +51,6 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<DataSeeder>();
 
-// CORS: Only allow your front-end origin
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendOnly", policy =>
@@ -62,6 +62,26 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Apply migrations and seed data
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate(); // ?? Apply migrations
+
+        await DataSeeder.SeedAll(services); // ?? Seed roles, users, statuses
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Startup error: {ex}");
+        throw;
+    }
+}
+
 app.UseCors("FrontendOnly");
 
 // API Key Middleware
@@ -81,20 +101,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// --- Automatic database migration ---
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync(); // Use async for best practice
-
-    var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
-    await DataSeeder.SeedAll(scope.ServiceProvider);
-}
-// ------------------------------------
-
-// Add a root endpoint for a friendly message
-app.MapGet("/", () => "ToDoApp API is running.");
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -104,11 +110,14 @@ if (app.Environment.IsDevelopment())
         options.SupportedSubmitMethods(Array.Empty<Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod>());
     });
 }
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/", () => "ToDoApp API is running.");
 
 app.Run();

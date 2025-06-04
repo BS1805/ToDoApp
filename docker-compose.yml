@@ -1,18 +1,8 @@
-services:
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      - SA_PASSWORD=Your_password123
-      - ACCEPT_EULA=Y
-    ports:
-      - "1433:1433"
-    healthcheck:
-      test: ["CMD-SHELL", "sqlcmd -S localhost -U sa -P Your_password123 -Q 'SELECT 1'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+version: "3.9"
 
+services:
   api:
+    platform: linux/amd64  # Force compatibility with Windows/WSL
     build:
       context: .
       dockerfile: ToDoApp.API/Dockerfile
@@ -21,12 +11,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=db;Database=ToDoAppDb;User=sa;Password=Your_password123;Encrypt=False;TrustServerCertificate=True;
-    depends_on:
-      db:
-        condition: service_healthy
+      - ConnectionStrings__DefaultConnection=Data Source=host.docker.internal,1433;Initial Catalog=SBU-ToDoAppDb;User ID=newuser;Password=12345678;Encrypt=False;TrustServerCertificate=True;
 
   frontend:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ToDoApp.Mvc/Dockerfile
