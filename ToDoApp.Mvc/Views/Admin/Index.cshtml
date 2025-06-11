@@ -111,13 +111,14 @@
                                     <i class="bi bi-pause-circle"></i> Deactivate
                                 </button>
                             </form>
-                            <form asp-action="DeleteUser" method="post" class="flex-fill">
+                            <form asp-action="DeleteUser" method="post" class="flex-fill delete-user-form">
                                 <input type="hidden" name="userId" value="@user.Id" />
-                                <button type="submit" class="btn btn-danger text-white w-100"
-                                        onclick="return confirm('Are you sure you want to delete this user?')">
+                                <button type="button" class="btn btn-danger text-white w-100 delete-user-btn"
+                                        data-username="@user.UserName">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
                             </form>
+
                         </div>
                     </div>
                 </div>
@@ -138,4 +139,6 @@
     }
 </div>
 
-
+@section Scripts {
+    <script src="/js/admin-index.js"></script>
+}
