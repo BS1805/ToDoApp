@@ -115,9 +115,9 @@ public class ToDoService : IToDoService
             StatusId = model.StatusId,
             UserId = userId
         };
+
         await _repository.AddAsync(toDoItem);
 
-        // Return TaskViewModel for consistency
         return new TaskViewModel
         {
             Id = toDoItem.Id,

@@ -17,12 +17,44 @@
             <a asp-action="Dashboard" class="btn btn-outline-info btn-sm me-2">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a asp-action="Create" class="btn btn-outline-success btn-sm">
+            <button class="btn btn-outline-success btn-sm" id="createTaskBtn" type="button">
                 <i class="bi bi-plus-circle"></i> Create Task
-            </a>
+            </button>
         </div>
     </div>
 
+    <!-- Task Creation Modal -->
+    <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createTaskModalLabel">Create New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createTaskForm" asp-action="Create" asp-controller="ToDo" method="post">
+                        <div class="mb-3">
+                            <label for="taskTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="taskTitle" name="Title" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="taskDescription" name="Description" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskStatus" class="form-label">Status</label>
+                            <select class="form-select" id="taskStatus" name="StatusId" required>
+                                <option value="1">Pending</option>
+                                <option value="2">In Progress</option>
+                                <option value="3">Completed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Task</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
         @foreach (var item in Model.Items)
@@ -72,7 +104,6 @@
                             <a class="btn btn-outline-primary btn-details" asp-action="Details" asp-route-id="@item.Id">
                                 <i class="bi bi-eye-fill"></i> Show Details
                             </a>
-
                             <a class="btn btn-danger text-white" asp-action="Delete" asp-route-id="@item.Id">
                                 <i class="bi bi-trash"></i> Delete
                             </a>
@@ -116,3 +147,7 @@
         </nav>
     </div>
 </div>
+
+@section Scripts {
+    <script src="/js/todo-index.js"></script>
+}

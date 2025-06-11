@@ -66,10 +66,17 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var dashboardDataObj = await response.Content.ReadFromJsonAsync<object>();
-        var dashboardData = JsonSerializer.Deserialize<List<DashboardTaskSummaryDto>>(dashboardDataObj?.ToString() ?? "[]");
+        var dashboardData = await response.Content.ReadFromJsonAsync<List<DashboardTaskSummaryDto>>();
+
+        // Ensure dashboardData is not null
+        if (dashboardData == null)
+        {
+            dashboardData = new List<DashboardTaskSummaryDto>();
+        }
+
         return View(dashboardData);
     }
+
 
     [HttpGet]
     public async Task<IActionResult> TasksByStatus(int statusId, int page = 1, int pageSize = 10)
@@ -82,8 +89,7 @@ public class ToDoController : Controller
             return HandleUnsuccessfulResponse(response);
         }
 
-        var pagedTasksObj = await response.Content.ReadFromJsonAsync<object>();
-        var pagedTasks = JsonSerializer.Deserialize<PagedListViewModel<TaskViewModel>>(pagedTasksObj?.ToString() ?? "{}");
+        var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
 
         // Ensure pagedTasks and Items are not null
         if (pagedTasks == null)
@@ -106,6 +112,7 @@ public class ToDoController : Controller
         ViewData["PageSize"] = pageSize;
         return View(pagedTasks);
     }
+
 
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
