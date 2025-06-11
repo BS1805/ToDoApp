@@ -53,12 +53,12 @@ builder.Services.AddScoped<DataSeeder>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendOnly", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:5001")
+        policy.WithOrigins("http://localhost:5001") 
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials(); // Allows cookies or tokens
     });
 });
 
@@ -83,7 +83,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseCors("FrontendOnly");
+app.UseCors("AllowFrontend");
 
 // API Key Middleware
 app.Use(async (context, next) =>

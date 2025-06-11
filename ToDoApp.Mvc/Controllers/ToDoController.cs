@@ -166,7 +166,7 @@ public class ToDoController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> CanCreate()
     {
         var client = CreateClientWithApiKey();
         var permResponse = await client.GetAsync($"{_apiBaseUrl}/todo/cancreate");

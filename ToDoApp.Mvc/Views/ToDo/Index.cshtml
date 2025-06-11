@@ -17,9 +17,11 @@
             <a asp-action="Dashboard" class="btn btn-outline-info btn-sm me-2">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <button class="btn btn-outline-success btn-sm" id="createTaskBtn" type="button">
+            <button class="btn btn-outline-success btn-sm" id="createTaskBtn" type="button"
+                    data-cancreate-url="@Url.Action("CanCreate", "ToDo")">
                 <i class="bi bi-plus-circle"></i> Create Task
             </button>
+
         </div>
     </div>
 
