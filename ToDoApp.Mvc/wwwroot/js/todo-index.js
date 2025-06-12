@@ -20,7 +20,7 @@
             });
     });
 
-    // Delete Task Confirmation (unchanged)
+    // Delete Task Confirmation
     document.querySelectorAll('.btn-danger').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
             e.preventDefault();

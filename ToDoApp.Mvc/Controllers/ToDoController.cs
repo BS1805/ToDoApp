@@ -113,6 +113,21 @@ public class ToDoController : Controller
         return View(pagedTasks);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> TasksByStatusApi(int statusId, int page = 1, int pageSize = 10)
+    {
+        var client = CreateClientWithApiKey();
+        var response = await client.GetAsync($"{_apiBaseUrl}/todo/tasks/status/{statusId}?page={page}&pageSize={pageSize}");
+
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+
+        var pagedTasks = await response.Content.ReadFromJsonAsync<PagedListViewModel<TaskViewModel>>();
+
+        return Json(pagedTasks);
+    }
+
+
 
     [HttpGet]
     public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
